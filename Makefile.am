@@ -1,4 +1,4 @@
-SUBDIRS = python
+SUBDIRS = src
 
 EXTRA_DIST = \
 	ccs-bindings.pc.in

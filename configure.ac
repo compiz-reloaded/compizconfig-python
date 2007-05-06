@@ -40,7 +40,7 @@ fi
 AC_CONFIG_FILES([
 	ccs-bindings.pc
 	Makefile
-	python/Makefile
+	src/Makefile
 ])
 
 AC_OUTPUT
