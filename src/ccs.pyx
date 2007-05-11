@@ -240,6 +240,9 @@ cdef extern Bool ccsSetValue(CCSSetting * setting, CCSSettingValue * value)
 cdef extern void ccsFreeSettingValue(CCSSettingValue * value)
 cdef extern CCSSettingValueList * ccsSettingValueListAppend(CCSSettingValueList * l, CCSSettingValue * v)
 
+cdef extern CCSStringList * ccsGetExistingProfiles(CCSContext * context)
+cdef extern void ccsDeleteProfile(CCSContext * context, char * name)
+
 cdef extern void ccsReadSettings(CCSContext * c)
 cdef extern void ccsWriteSettings(CCSContext * c)
 cdef extern void ccsWriteChangedSettings(CCSContext * c)
@@ -616,10 +619,27 @@ cdef class Plugin:
 				ccsPluginConflictListFree(pl, True)
 			return ret
 
+cdef class Profile:
+	cdef Context context
+	cdef char * name
+
+	def __new__(self,context,name):
+		self.context = context
+		self.name = name
+
+	def Delete(self):
+		ccsDeleteProfile(self.context.ccsContext,self.name)
+
+	property Name:
+		def __get__(self):
+			return self.name
+	
+
 cdef class Context:
 	cdef CCSContext * ccsContext
 	cdef object plugins
 	cdef object categories
+	cdef object profiles
 	cdef int nScreens
 
 	def __new__(self,nScreens=1):
@@ -642,6 +662,14 @@ cdef class Context:
 				self.categories[cat]=[]
 			self.categories[cat].append(self.plugins[pl.name])
 			pll=pll.next
+		self.profiles={}
+		cdef CCSStringList * profileList
+		cdef char * profileName
+		profileList=ccsGetExistingProfiles(self.ccsContext)
+		while profileList != NULL:
+			profileName = <char *> profileList.data
+			self.profiles[profileName] = Profile(self,profileName)
+			profileList=profileList.next
 
 	def __dealloc__(self):
 		ccsContextDestroy(self.ccsContext)
@@ -661,6 +689,9 @@ cdef class Context:
 	property Categories:
 		def __get__(self):
 			return self.categories
+	property Profiles:
+		def __get__(self):
+			return self.profiles
 	property NScreens:
 		def __get__(self):
 			return self.nScreens
