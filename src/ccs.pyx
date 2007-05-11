@@ -688,7 +688,7 @@ cdef class Context:
 		ccsReadSettings(self.ccsContext)
 
 	def ResetProfile(self):
-		ccsSetProfile(self.ccsContext, "Default")
+		ccsSetProfile(self.ccsContext, "")
 
 	property Plugins:
 		def __get__(self):
