@@ -242,6 +242,7 @@ cdef extern CCSSettingValueList * ccsSettingValueListAppend(CCSSettingValueList 
 
 cdef extern CCSStringList * ccsGetExistingProfiles(CCSContext * context)
 cdef extern void ccsDeleteProfile(CCSContext * context, char * name)
+cdef extern void ccsSetProfile(CCSContext * context, char * name)
 
 cdef extern void ccsReadSettings(CCSContext * c)
 cdef extern void ccsWriteSettings(CCSContext * c)
@@ -640,6 +641,7 @@ cdef class Context:
 	cdef object plugins
 	cdef object categories
 	cdef object profiles
+	cdef object currentProfile
 	cdef int nScreens
 
 	def __new__(self,nScreens=1):
@@ -662,7 +664,9 @@ cdef class Context:
 				self.categories[cat]=[]
 			self.categories[cat].append(self.plugins[pl.name])
 			pll=pll.next
+
 		self.profiles={}
+		self.currentProfile=Profile(self,self.ccsContext.profile)
 		cdef CCSStringList * profileList
 		cdef char * profileName
 		profileList=ccsGetExistingProfiles(self.ccsContext)
@@ -683,12 +687,21 @@ cdef class Context:
 	def Read(self):
 		ccsReadSettings(self.ccsContext)
 
+	def ResetProfile(self):
+		ccsSetProfile(self.ccsContext, "Default")
+
 	property Plugins:
 		def __get__(self):
 			return self.plugins
 	property Categories:
 		def __get__(self):
 			return self.categories
+	property CurrentProfile:
+		def __get__(self):
+			return self.currentProfile
+		def __set__(self,profile):
+			self.currentProfile = profile
+			ccsSetProfile(self.ccsContext, profile.Name)
 	property Profiles:
 		def __get__(self):
 			return self.profiles
