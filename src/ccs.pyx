@@ -71,8 +71,39 @@ ctypedef CCSList CCSGroupList
 ctypedef CCSList CCSSubGroupList
 ctypedef CCSList CCSPluginConflictList
 ctypedef CCSList CCSSettingValueList
+ctypedef CCSList CCSBackendInfoList
 
-cdef extern struct CCSBackend
+cdef struct CCSBackendVTable:
+	char * name
+	char * shortDesc
+	char * longDesc
+	Bool integrationSupport
+	Bool profileSupport
+
+	void * executeEvents
+	void * backendInit
+	void * backendFini
+	void * readInit
+	void * readSetting
+	void * readDone
+	void * writeInit
+	void * writeSetting
+	void * writeDone
+	void * getSettingIsIntegrated
+	void * getSettingIsReadOnly
+	void * getExistingProfiles
+	void * deleteProfile
+
+cdef struct CCSBackend:
+	void * dlhand
+	CCSBackendVTable * vTable
+
+cdef struct CCSBackendInfo:
+	char *	name
+	char *	shortDesc
+	char *	longDesc
+	Bool integrationSupport
+	Bool profileSupport
 
 cdef struct CCSSettingActionValue:
 	int button
@@ -214,7 +245,8 @@ cdef extern CCSPlugin * ccsFindPlugin(CCSContext * context, char * name)
 cdef extern CCSSetting * ccsFindSetting(CCSPlugin * plugin, char * name, Bool isScreen, int screenNum)
 
 #cdef extern char * ccsColorToString(CCSSettingColorValue * color)
-cdef extern char * ccsEdgeToString(CCSSettingActionValue * action)
+#cdef extern char * ccsEdgeToString(CCSSettingActionValue * action)
+cdef extern CCSStringList * ccsEdgesToStringList (CCSSettingActionValue * action)
 cdef extern char * ccsKeyBindingToString(CCSSettingActionValue * action)
 cdef extern char * ccsButtonBindingToString(CCSSettingActionValue * action)
 
@@ -235,7 +267,8 @@ cdef extern from 'string.h':
 #cdef extern Bool ccsStringToColor(char * value, CCSSettingColorValue * target)
 cdef extern Bool ccsStringToKeyBinding(char * value, CCSSettingActionValue * target)
 cdef extern Bool ccsStringToButtonBinding(char * value, CCSSettingActionValue * target)
-cdef extern Bool ccsStringToEdge(char * value, CCSSettingActionValue * target)
+#cdef extern Bool ccsStringToEdge(char * value, CCSSettingActionValue * target)
+cdef extern void ccsStringListToEdges (CCSStringList * edges, CCSSettingActionValue * target)
 cdef extern Bool ccsSetValue(CCSSetting * setting, CCSSettingValue * value)
 cdef extern void ccsFreeSettingValue(CCSSettingValue * value)
 cdef extern CCSSettingValueList * ccsSettingValueListAppend(CCSSettingValueList * l, CCSSettingValue * v)
@@ -243,6 +276,9 @@ cdef extern CCSSettingValueList * ccsSettingValueListAppend(CCSSettingValueList 
 cdef extern CCSStringList * ccsGetExistingProfiles(CCSContext * context)
 cdef extern void ccsDeleteProfile(CCSContext * context, char * name)
 cdef extern void ccsSetProfile(CCSContext * context, char * name)
+
+cdef extern CCSBackendInfoList * ccsGetExistingBackends()
+cdef extern Bool ccsSetBackend(CCSContext * context, char * name)
 
 cdef extern void ccsReadSettings(CCSContext * c)
 cdef extern void ccsWriteSettings(CCSContext * c)
@@ -268,6 +304,35 @@ cdef CCSSettingType GetType(CCSSettingValue * value):
 		return (<CCSSetting *>value.parent).info.forList.listType
 	else:
 		return (<CCSSetting *>value.parent).type
+
+cdef CCSStringList * ListToStringList(object list):
+	if len(list) <= 0:
+		return NULL
+	cdef CCSStringList * listStart
+	cdef CCSStringList * stringList
+	cdef CCSStringList * prev
+	listStart = <CCSStringList *> malloc(sizeof(CCSStringList))
+	listStart.data = <char *> list[0]
+	listStart.next = NULL
+	prev = listStart
+	
+	for l in list[1:]:
+		
+		stringList = <CCSStringList *> malloc(sizeof(CCSStringList))
+		stringList.data = <char *> l
+		stringList.next = NULL
+		prev.next = stringList
+		prev = stringList
+	
+	return prev
+	
+cdef object StringListToList(CCSStringList * stringList):
+	list = []
+	while stringList:
+		item = <char *> stringList.data
+		list.append(item)
+		stringList = stringList.next
+	return list
 
 cdef CCSSettingValue * EncodeValue(object data, CCSSetting * setting, Bool isListChild):
 	cdef CCSSettingValue * bv
@@ -306,7 +371,8 @@ cdef CCSSettingValue * EncodeValue(object data, CCSSetting * setting, Bool isLis
 			bv.value.asAction.onBell = 1
 		else:
 			bv.value.asAction.onBell = 0
-		ccsStringToEdge(data[3],&bv.value.asAction)
+		l = ListToStringList(data[3])
+		ccsStringListToEdges(l,&bv.value.asAction)
 	elif t == TypeList:
 		l = NULL
 		for item in data:
@@ -356,12 +422,11 @@ cdef object DecodeValue(CCSSettingValue * value):
 			bs='None'
 		if bs == 'Button0':
 			bs = 'None'
-		s=ccsEdgeToString(&value.value.asAction)
+		l=ccsEdgesToStringList(&value.value.asAction)
 		if s != NULL:
-			es=s
-			free(s)
+			es=StringListToList(l)
 		else:
-			es='None'
+			es=['None']
 		bb=False
 		if value.value.asAction.onBell:
 			bb=True
@@ -634,7 +699,28 @@ cdef class Profile:
 	property Name:
 		def __get__(self):
 			return self.name
-	
+
+cdef class Backend:
+	cdef Context context
+	cdef char * name
+	cdef char * shortDesc
+	cdef char * longDesc
+
+	def __new__(self,context,info):
+		self.context = context
+		self.name = info[0]
+		self.shortDesc = info[1]
+		self.longDesc = info[2]
+
+	property Name:
+		def __get__(self):
+			return self.name
+	property ShortDesc:
+		def __get__(self):
+			return self.shortDesc
+	property LongDesc:
+		def __get__(self):
+			return self.longDesc
 
 cdef class Context:
 	cdef CCSContext * ccsContext
@@ -642,6 +728,8 @@ cdef class Context:
 	cdef object categories
 	cdef object profiles
 	cdef object currentProfile
+	cdef object backends
+	cdef object currentBackend
 	cdef int nScreens
 
 	def __new__(self,nScreens=1):
@@ -675,6 +763,22 @@ cdef class Context:
 			self.profiles[profileName] = Profile(self,profileName)
 			profileList=profileList.next
 
+		# FIXME Following code causes a seg fault.
+		"""
+		self.backends={}
+		cdef CCSBackendInfoList * backendList
+		cdef CCSBackendInfo * backendInfo
+		backendInfo.name = strdup(self.ccsContext.backend.vTable.name)
+		backendInfo.shortDesc = strdup(self.ccsContext.backend.vTable.shortDesc)
+		backendInfo.longDesc = strdup(self.ccsContext.backend.vTable.longDesc)
+		self.currentBackend=Backend(self,(backendInfo.name, backendInfo.shortDesc, backendInfo.longDesc))
+		backendList=ccsGetExistingBackends()
+		while backendList != NULL:
+			backendInfo = <CCSBackendInfo *> backendList.data
+			self.backends[backendInfo.name] = Backend(self,(backendInfo.name, backendInfo.shortDesc, backendInfo.longDesc))
+			backendList=backendList.next
+		"""
+
 	def __dealloc__(self):
 		ccsContextDestroy(self.ccsContext)
 
@@ -705,6 +809,15 @@ cdef class Context:
 	property Profiles:
 		def __get__(self):
 			return self.profiles
+	property CurrentBackend:
+		def __get__(self):
+			return self.currentBackend
+		def __set__(self,backend):
+			self.currentBackend = backend
+			ccsSetBackend(self.ccsContext, backend.Name)
+	property Backends:
+		def __get__(self):
+			return self.backends
 	property NScreens:
 		def __get__(self):
 			return self.nScreens
