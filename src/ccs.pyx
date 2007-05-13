@@ -689,7 +689,7 @@ cdef class Profile:
 	cdef Context context
 	cdef char * name
 
-	def __new__(self,context,name):
+	def __new__(self, Context context, name):
 		self.context = context
 		self.name = name
 
@@ -706,7 +706,7 @@ cdef class Backend:
 	cdef char * shortDesc
 	cdef char * longDesc
 
-	def __new__(self,context,info):
+	def __new__(self, Context context, info):
 		self.context = context
 		self.name = info[0]
 		self.shortDesc = info[1]
