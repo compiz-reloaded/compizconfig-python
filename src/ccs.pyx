@@ -760,7 +760,23 @@ cdef class Context:
 				self.categories[cat]=[]
 			self.categories[cat].append(self.plugins[pl.name])
 			pll=pll.next
+		
+		self.UpdateProfiles()
+		
 
+	def __dealloc__(self):
+		ccsContextDestroy(self.ccsContext)
+
+	def Write(self,onlyChanged=True):
+		if onlyChanged:
+			ccsWriteChangedSettings(self.ccsContext)
+		else:
+			ccsWriteSettings(self.ccsContext)
+
+	def Read(self):
+		ccsReadSettings(self.ccsContext)
+
+	def UpdateProfiles(self):
 		self.profiles={}
 		self.currentProfile=Profile(self,self.ccsContext.profile)
 		cdef CCSStringList * profileList
@@ -780,18 +796,7 @@ cdef class Context:
 			self.backends[backendInfo.name] = Backend(self,(backendInfo.name, backendInfo.shortDesc, backendInfo.longDesc))
 			backendList=backendList.next
 		self.currentBackend=self.backends[self.ccsContext.backend.vTable.name]
-
-	def __dealloc__(self):
-		ccsContextDestroy(self.ccsContext)
-
-	def Write(self,onlyChanged=True):
-		if onlyChanged:
-			ccsWriteChangedSettings(self.ccsContext)
-		else:
-			ccsWriteSettings(self.ccsContext)
-
-	def Read(self):
-		ccsReadSettings(self.ccsContext)
+		
 
 	def ResetProfile(self):
 		ccsSetProfile(self.ccsContext, "")
