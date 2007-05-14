@@ -691,7 +691,10 @@ cdef class Profile:
 
 	def __new__(self, Context context, name):
 		self.context = context
-		self.name = name
+		self.name = strdup(name)
+
+	def __dealloc(self):
+		free(self.name)
 
 	def Delete(self):
 		ccsDeleteProfile(self.context.ccsContext,self.name)
@@ -708,9 +711,14 @@ cdef class Backend:
 
 	def __new__(self, Context context, info):
 		self.context = context
-		self.name = info[0]
-		self.shortDesc = info[1]
-		self.longDesc = info[2]
+		self.name = strdup(info[0])
+		self.shortDesc = strdup(info[1])
+		self.longDesc = strdup(info[2])
+	
+	def __dealloc__(self):
+		free(self.name)
+		free(self.shortDesc)
+		free(self.longDesc)
 
 	property Name:
 		def __get__(self):
