@@ -763,16 +763,15 @@ cdef class Context:
 			self.profiles[profileName] = Profile(self,profileName)
 			profileList=profileList.next
 
-		# FIXME Following code causes a seg fault.
 		self.backends={}
 		cdef CCSBackendInfoList * backendList
 		cdef CCSBackendInfo * backendInfo
-		self.currentBackend=Backend(self,(self.ccsContext.backend.vTable.name, self.ccsContext.backend.vTable.shortDesc, self.ccsContext.backend.vTable.longDesc))
 		backendList=ccsGetExistingBackends()
 		while backendList != NULL:
 			backendInfo = <CCSBackendInfo *> backendList.data
 			self.backends[backendInfo.name] = Backend(self,(backendInfo.name, backendInfo.shortDesc, backendInfo.longDesc))
 			backendList=backendList.next
+		self.currentBackend=self.backends[self.ccsContext.backend.vTable.name]
 
 	def __dealloc__(self):
 		ccsContextDestroy(self.ccsContext)
