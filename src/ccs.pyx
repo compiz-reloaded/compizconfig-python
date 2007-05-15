@@ -308,23 +308,23 @@ cdef CCSSettingType GetType(CCSSettingValue * value):
 cdef CCSStringList * ListToStringList(object list):
 	if len(list) <= 0:
 		return NULL
+
 	cdef CCSStringList * listStart
 	cdef CCSStringList * stringList
 	cdef CCSStringList * prev
 	listStart = <CCSStringList *> malloc(sizeof(CCSStringList))
-	listStart.data = <char *> list[0]
+	listStart.data = <char *> strdup(list[0])
 	listStart.next = NULL
 	prev = listStart
 	
 	for l in list[1:]:
-		
 		stringList = <CCSStringList *> malloc(sizeof(CCSStringList))
-		stringList.data = <char *> l
+		stringList.data = <char *> strdup(l)
 		stringList.next = NULL
 		prev.next = stringList
 		prev = stringList
 	
-	return prev
+	return listStart
 	
 cdef object StringListToList(CCSStringList * stringList):
 	list = []
@@ -372,6 +372,7 @@ cdef CCSSettingValue * EncodeValue(object data, CCSSetting * setting, Bool isLis
 		else:
 			bv.value.asAction.onBell = 0
 		l = ListToStringList(data[3])
+		print <char *>l.data
 		ccsStringListToEdges(l,&bv.value.asAction)
 	elif t == TypeList:
 		l = NULL
