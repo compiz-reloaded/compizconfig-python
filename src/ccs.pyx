@@ -372,7 +372,6 @@ cdef CCSSettingValue * EncodeValue(object data, CCSSetting * setting, Bool isLis
 		else:
 			bv.value.asAction.onBell = 0
 		l = ListToStringList(data[3])
-		print <char *>l.data
 		ccsStringListToEdges(l,&bv.value.asAction)
 	elif t == TypeList:
 		l = NULL
