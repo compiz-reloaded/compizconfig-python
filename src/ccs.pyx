@@ -144,7 +144,7 @@ cdef struct CCSIntDesc:
 cdef struct CCSSettingIntInfo:
 	int min
 	int max
-	CCSIntDescList desc
+	CCSIntDescList * desc
 
 cdef struct CCSSettingFloatInfo:
 	float min
@@ -234,8 +234,8 @@ cdef struct CCSPlugin:
 	CCSStringList * loadBefore
 	CCSStringList * requiresPlugin
 	CCSStringList * conflictPlugin
-	CCSStringList * providesFeature
 	CCSStringList * conflictFeature
+	CCSStringList * providesFeature
 	CCSStringList * requiresFeature
 	CCSSettingList * settings
 	CCSGroupList * groups
