@@ -32,7 +32,8 @@ cdef enum CCSPluginConflictType:
 	#activate
 	ConflictRequiresPlugin
 	ConflictRequiresFeature
-	ConflictSameFeature
+	ConflictFeature
+	ConflictPlugin
 	#deactivate
 	ConflictFeatureNeeded
 	ConflictPluginNeeded
@@ -56,7 +57,8 @@ SettingTypeString=[
 ConflictTypeString=[
 		'RequiresPlugin', #A
 		'RequiresFeature', #A
-		'SameFeature', #A
+		'ConflictFeature', #A
+		'ConflictPlugin' #A
 		'FeatureNeeded', #D
 		'PluginNeeded', #D
 		'PluginError'] #A
@@ -72,6 +74,7 @@ ctypedef CCSList CCSSubGroupList
 ctypedef CCSList CCSPluginConflictList
 ctypedef CCSList CCSSettingValueList
 ctypedef CCSList CCSBackendInfoList
+ctypedef CCSList CCSIntDescList
 
 cdef struct CCSBackendVTable:
 	char * name
@@ -134,9 +137,14 @@ cdef union CCSSettingValueUnion:
 	CCSSettingColorValue asColor
 	CCSSettingValueList * asList
 
+cdef struct CCSIntDesc:
+	int  value
+	char *name
+
 cdef struct CCSSettingIntInfo:
 	int min
 	int max
+	CCSIntDescList desc
 
 cdef struct CCSSettingFloatInfo:
 	float min
@@ -225,7 +233,9 @@ cdef struct CCSPlugin:
 	CCSStringList * loadAfter
 	CCSStringList * loadBefore
 	CCSStringList * requiresPlugin
+	CCSStringList * conflictPlugin
 	CCSStringList * providesFeature
+	CCSStringList * conflictFeature
 	CCSStringList * requiresFeature
 	CCSSettingList * settings
 	CCSGroupList * groups
