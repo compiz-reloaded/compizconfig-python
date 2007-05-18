@@ -248,7 +248,7 @@ cdef struct CCSPluginConflict:
 	CCSPluginList * plugins
 
 
-cdef extern CCSContext * ccsContextNew()
+cdef extern CCSContext * ccsContextNew(unsigned int * screens, unsigned int numScreens)
 cdef extern void ccsContextDestroy(CCSContext * context)
 
 cdef extern CCSPlugin * ccsFindPlugin(CCSContext * context, char * name)
@@ -750,12 +750,17 @@ cdef class Context:
 	cdef object currentBackend
 	cdef int nScreens
 
-	def __new__(self,nScreens=1):
+	def __new__(self,screens=[0],nScreens=1):
 		cdef CCSPlugin * pl
 		cdef CCSList * pll
 		self.nScreens=nScreens
 		self.plugins={}
-		self.ccsContext=ccsContextNew()
+		cdef unsigned int * screensBuf
+		screensBuf = <unsigned int *> malloc(sizeof(unsigned int)*nScreens)
+		for i in range(nScreens):
+			screensBuf[i] = screens[i]
+		self.ccsContext=ccsContextNew(screensBuf, nScreens)
+		free(screensBuf)
 		ccsReadSettings(self.ccsContext)
 		pll=self.ccsContext.plugins
 		self.categories={}
