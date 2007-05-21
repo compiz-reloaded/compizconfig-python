@@ -254,18 +254,10 @@ cdef extern void ccsContextDestroy(CCSContext * context)
 cdef extern CCSPlugin * ccsFindPlugin(CCSContext * context, char * name)
 cdef extern CCSSetting * ccsFindSetting(CCSPlugin * plugin, char * name, Bool isScreen, int screenNum)
 
-#cdef extern char * ccsColorToString(CCSSettingColorValue * color)
-#cdef extern char * ccsEdgeToString(CCSSettingActionValue * action)
 cdef extern CCSStringList * ccsEdgesToStringList (CCSSettingActionValue * action)
 cdef extern char * ccsKeyBindingToString(CCSSettingActionValue * action)
 cdef extern char * ccsButtonBindingToString(CCSSettingActionValue * action)
 
-#cdef extern Bool ccsSetInt(CCSSetting * setting, int data)
-#cdef extern Bool ccsSetFloat(CCSSetting * setting, float data)
-#cdef extern Bool ccsSetBool(CCSSetting * setting, Bool data)
-#cdef extern Bool ccsSetString(CCSSetting * setting, char * data)
-#cdef extern Bool ccsSetColor(CCSSetting * setting, CCSSettingColorValue data)
-#cdef extern Bool ccsSetMatch(CCSSetting * setting, char * data)
 cdef extern from 'string.h':
 	ctypedef int size_t
 	cdef extern char * strdup(char * s)
@@ -274,10 +266,8 @@ cdef extern from 'string.h':
 	cdef extern void * malloc(size_t s)
 
 
-#cdef extern Bool ccsStringToColor(char * value, CCSSettingColorValue * target)
 cdef extern Bool ccsStringToKeyBinding(char * value, CCSSettingActionValue * target)
 cdef extern Bool ccsStringToButtonBinding(char * value, CCSSettingActionValue * target)
-#cdef extern Bool ccsStringToEdge(char * value, CCSSettingActionValue * target)
 cdef extern void ccsStringListToEdges (CCSStringList * edges, CCSSettingActionValue * target)
 cdef extern Bool ccsSetValue(CCSSetting * setting, CCSSettingValue * value)
 cdef extern void ccsFreeSettingValue(CCSSettingValue * value)
@@ -301,13 +291,6 @@ cdef extern CCSPluginConflictList * ccsCanDisablePlugin(CCSContext * c, CCSPlugi
 
 cdef class Context
 cdef class Plugin
-
-cdef object UnpackStringList(CCSList * list):
-	ret=[]
-	while list != NULL:
-		ret.append(<char *>list.data)
-		list=list.next
-	return ret
 
 cdef CCSSettingType GetType(CCSSettingValue * value):
 	if (value.isListChild):
@@ -336,13 +319,22 @@ cdef CCSStringList * ListToStringList(object list):
 	
 	return listStart
 	
-cdef object StringListToList(CCSStringList * stringList):
+cdef object StringListToList(CCSList * stringList):
 	list = []
 	while stringList:
 		item = <char *> stringList.data
 		list.append(item)
 		stringList = stringList.next
 	return list
+
+cdef object IntDescListToDict(CCSIntDescList * intDescList):
+	cdef CCSIntDesc * desc
+	dict = {}
+	while intDescList:
+		desc = <CCSIntDesc *> intDescList.data
+		dict[desc.name] = desc.value
+		intDescList = intDescList.next
+	return dict
 
 cdef CCSSettingValue * EncodeValue(object data, CCSSetting * setting, Bool isListChild):
 	cdef CCSSettingValue * bv
@@ -464,16 +456,17 @@ cdef class Setting:
 		info=()
 		t=self.ccsSetting.type
 		i=&self.ccsSetting.info
-		if t==TypeList:
+		if t == TypeList:
 			t=self.ccsSetting.info.forList.listType
 			i=<CCSSettingInfo *>self.ccsSetting.info.forList.listInfo
 		if t == TypeInt:
-			info=(i.forInt.min,i.forInt.max)
+			desc = IntDescListToDict(i.forInt.desc)
+			info=(i.forInt.min,i.forInt.max,desc)
 		elif t == TypeFloat:
 			info=(i.forFloat.min,i.forFloat.max,
 					i.forFloat.precision)
 		elif t == TypeString:
-			info=UnpackStringList(i.forString.allowedValues)
+			info=StringListToList(i.forString.allowedValues)
 		elif t == TypeAction:
 			info=(i.forAction.key,i.forAction.button,
 					i.forAction.bell,i.forAction.edge)
