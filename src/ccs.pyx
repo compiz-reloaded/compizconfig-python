@@ -289,6 +289,9 @@ cdef extern void ccsPluginConflictListFree(CCSPluginConflictList * l, Bool FreOB
 cdef extern CCSPluginConflictList * ccsCanEnablePlugin(CCSContext * c, CCSPlugin * p)
 cdef extern CCSPluginConflictList * ccsCanDisablePlugin(CCSContext * c, CCSPlugin * p)
 
+cdef extern Bool ccsPluginSetActive(CCSPlugin * p, Bool v)
+cdef extern Bool ccsPluginIsActive(CCSContext * c, char * n)
+
 cdef class Context
 cdef class Plugin
 
@@ -558,21 +561,25 @@ cdef class Plugin:
 	cdef object screens
 	cdef object display
 	cdef object groups
+	cdef object loaded
 	
 	def __new__(self, Context context, name):
+		self.ccsPlugin = ccsFindPlugin(context.ccsContext,name)
+		self.context = context
+		self.screens = []
+		self.display = {}
+		self.groups = {}
+		self.loaded = False
+		for n in range(0,context.NScreens):
+			self.screens.append({})
+
+	def Update(self):
 		cdef CCSList * setlist
 		cdef CCSList * glist
 		cdef CCSList * sglist
 		cdef CCSSetting * sett
 		cdef CCSGroup * gr
 		cdef CCSSubGroup * sgr
-		self.ccsPlugin = ccsFindPlugin(context.ccsContext,name)
-		self.context = context
-		self.screens = []
-		self.display = {}
-		self.groups = {}
-		for n in range(0,context.NScreens):
-			self.screens.append({})
 		glist = ccsGetPluginGroups(self.ccsPlugin)
 		while glist != NULL:
 			gr=<CCSGroup *>glist.data
@@ -581,7 +588,7 @@ cdef class Plugin:
 			while sglist != NULL:
 				sgr=<CCSSubGroup *>sglist.data
 				scr=[]
-				for n in range(0,context.NScreens):
+				for n in range(0,self.context.NScreens):
 					scr.append({})
 				self.groups[gr.name][sgr.name]=SSGroup({},scr)
 				sglist=sglist.next
@@ -600,18 +607,25 @@ cdef class Plugin:
 				self.groups[sett.group][sett.subGroup].Display[
 						sett.name]= self.display[sett.name]
 			setlist=setlist.next
+		self.loaded = True
 
 	property Context:
 		def __get__(self):
 			return self.context
 	property Groups:
 		def __get__(self):
+			if not self.loaded:
+				self.Update()
 			return self.groups
 	property Display:
 		def __get__(self):
+			if not self.loaded:
+				self.Update()
 			return self.display
 	property Screens:
 		def __get__(self):
+			if not self.loaded:
+				self.Update()
 			return self.screens
 	property Name:
 		def __get__(self):
@@ -627,16 +641,16 @@ cdef class Plugin:
 			return self.ccsPlugin.category
 	property Enabled:
 		def __get__(self):
-			return self.Display['____plugin_enabled'].Value
+			return ccsPluginIsActive(self.context.ccsContext, self.ccsPlugin.name);
 		def __set__(self,val):
 			if val:
 				if len(self.EnableConflicts):
 					return
-				self.Display['____plugin_enabled'].Value = True
+				ccsPluginSetActive(self.ccsPlugin, True);
 			else:
 				if len(self.DisableConflicts):
 					return
-				self.Display['____plugin_enabled'].Value = False
+				ccsPluginSetActive(self.ccsPlugin, False);
 	property EnableConflicts:
 		def __get__(self):
 			cdef CCSPluginConflictList * pl, * pls
