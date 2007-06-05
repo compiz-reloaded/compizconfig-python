@@ -229,7 +229,6 @@ cdef struct CCSPlugin:
 	char * longDesc
 	char * hints
 	char * category
-	char * filename
 	CCSStringList * loadAfter
 	CCSStringList * loadBefore
 	CCSStringList * requiresPlugin
@@ -237,10 +236,9 @@ cdef struct CCSPlugin:
 	CCSStringList * conflictFeature
 	CCSStringList * providesFeature
 	CCSStringList * requiresFeature
-	CCSSettingList * settings
-	CCSGroupList * groups
 	void * priv
 	CCSContext * context
+	void * ccsPrivate
 
 cdef struct CCSPluginConflict:
 	char * value
@@ -253,6 +251,8 @@ cdef extern void ccsContextDestroy(CCSContext * context)
 
 cdef extern CCSPlugin * ccsFindPlugin(CCSContext * context, char * name)
 cdef extern CCSSetting * ccsFindSetting(CCSPlugin * plugin, char * name, Bool isScreen, int screenNum)
+cdef extern CCSSettingList * ccsGetPluginSettings(CCSPlugin * plugin)
+cdef extern CCSGroupList * ccsGetPluginGroups(CCSPlugin * plugin)
 
 cdef extern CCSStringList * ccsEdgesToStringList (CCSSettingActionValue * action)
 cdef extern char * ccsKeyBindingToString(CCSSettingActionValue * action)
@@ -573,7 +573,7 @@ cdef class Plugin:
 		self.groups = {}
 		for n in range(0,context.NScreens):
 			self.screens.append({})
-		glist = self.ccsPlugin.groups
+		glist = ccsGetPluginGroups(self.ccsPlugin)
 		while glist != NULL:
 			gr=<CCSGroup *>glist.data
 			self.groups[gr.name]={}
@@ -586,7 +586,7 @@ cdef class Plugin:
 				self.groups[gr.name][sgr.name]=SSGroup({},scr)
 				sglist=sglist.next
 			glist=glist.next
-		setlist = self.ccsPlugin.settings
+		setlist = ccsGetPluginSettings(self.ccsPlugin)
 		while setlist != NULL:
 			sett=<CCSSetting *>setlist.data
 			if sett.isScreen:
