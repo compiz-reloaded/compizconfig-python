@@ -151,9 +151,6 @@ cdef struct CCSSettingFloatInfo:
 	float max
 	float precision
 
-cdef struct CCSSettingStringInfo:
-	CCSStringList * allowedValues
-
 cdef struct CCSSettingActionInfo:
 	Bool key
 	Bool button
@@ -170,7 +167,6 @@ cdef struct CCSSettingListInfo:
 cdef union CCSSettingInfo:
 	CCSSettingIntInfo forInt
 	CCSSettingFloatInfo forFloat
-	CCSSettingStringInfo forString
 	CCSSettingActionInfo forAction
 	CCSSettingActionArrayInfo forActionAsArray
 	CCSSettingListInfo forList
@@ -468,8 +464,6 @@ cdef class Setting:
 		elif t == TypeFloat:
 			info=(i.forFloat.min,i.forFloat.max,
 					i.forFloat.precision)
-		elif t == TypeString:
-			info=StringListToList(i.forString.allowedValues)
 		elif t == TypeAction:
 			info=(i.forAction.key,i.forAction.button,
 					i.forAction.bell,i.forAction.edge)
