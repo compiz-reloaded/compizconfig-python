@@ -556,6 +556,7 @@ cdef class Plugin:
 	cdef object display
 	cdef object groups
 	cdef object loaded
+	cdef object ranking
 	
 	def __new__(self, Context context, name):
 		self.ccsPlugin = ccsFindPlugin(context.ccsContext,name)
@@ -564,6 +565,7 @@ cdef class Plugin:
 		self.display = {}
 		self.groups = {}
 		self.loaded = False
+		self.ranking = {}
 		for n in range(0,context.NScreens):
 			self.screens.append({})
 
@@ -588,6 +590,8 @@ cdef class Plugin:
 				sglist=sglist.next
 			glist=glist.next
 		setlist = ccsGetPluginSettings(self.ccsPlugin)
+		
+		rank = 0
 		while setlist != NULL:
 			sett=<CCSSetting *>setlist.data
 			if sett.isScreen:
@@ -600,6 +604,10 @@ cdef class Plugin:
 						sett.name, False)
 				self.groups[sett.group][sett.subGroup].Display[
 						sett.name]= self.display[sett.name]
+			if not self.ranking.has_key(sett.name):
+				self.ranking[sett.name] = rank
+				rank = rank + 1
+			
 			setlist=setlist.next
 		self.loaded = True
 
@@ -621,6 +629,11 @@ cdef class Plugin:
 			if not self.loaded:
 				self.Update()
 			return self.screens
+	property Ranking:
+		def __get__(self):
+			if not self.loaded:
+				self.Update()
+			return self.ranking
 	property Name:
 		def __get__(self):
 			return self.ccsPlugin.name
