@@ -1,7 +1,7 @@
 SUBDIRS = src
 
 EXTRA_DIST = \
-	ccs-bindings.pc.in
+	compizconfig-bindings.pc.in
 
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = ccs-bindings.pc
+pkgconfig_DATA = compizconfig-bindings.pc

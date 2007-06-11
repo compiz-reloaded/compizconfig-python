@@ -2,16 +2,16 @@ INCLUDES=\
 		 $(PYTHON_INCLUDES)\
 		 @CCS_CFLAGS@
 
-ccs.c: ccs.pyx
-	-pyrexc ccs.pyx
+compizconfig.c: compizconfig.pyx
+	-pyrexc compizconfig.pyx
 
-ccs_la_LDFLAGS = -module -avoid-version -fPIC -export-symbols-regex initccs -lX11
-ccs_la_LIBADD = @CCS_LIBS@
-ccs_la_SOURCES = ccs.c
-ccsdir=$(pyexecdir)
-ccs_LTLIBRARIES=ccs.la
+compizconfig_la_LDFLAGS = -module -avoid-version -fPIC -export-symbols-regex initcompizconfig -lX11
+compizconfig_la_LIBADD = @CCS_LIBS@
+compizconfig_la_SOURCES = compizconfig.c
+compizconfigdir=$(pyexecdir)
+compizconfig_LTLIBRARIES=compizconfig.la
 
-EXTRA_DIST=ccs.pyx
+EXTRA_DIST=compizconfig.pyx
 
 clean-local:
-	rm -f ccs.c
+	rm -f compizconfig.c
