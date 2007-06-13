@@ -450,8 +450,6 @@ cdef class Setting:
 	cdef CCSSetting * ccsSetting
 	cdef object info
 	cdef Plugin plugin
-	cdef Bool readOnly
-	cdef Bool integrated
 
 	def __new__(self, Plugin plugin, name, isScreen, screenNum=0):
 		cdef CCSSettingType t
@@ -477,9 +475,6 @@ cdef class Setting:
 		if self.ccsSetting.type == TypeList:
 			info=(SettingTypeString[t],info)
 		self.info=info
-
-		self.integrated = bool(ccsSettingIsIntegrated(self.ccsSetting))
-		self.readOnly = bool(ccsSettingIsReadOnly(self.ccsSetting))
 	
 	def Reset(self):
 		ccsResetToDefault(self.ccsSetting)
@@ -532,10 +527,10 @@ cdef class Setting:
 			ccsFreeSettingValue(sv)
 	property Integrated:
 		def __get__(self):
-			return self.integrated 
+			return bool(ccsSettingIsIntegrated(self.ccsSetting))
 	property ReadOnly:
 		def __get__(self):
-			return self.readOnly
+			return bool(ccsSettingIsReadOnly(self.ccsSetting))
 
 
 cdef class SSGroup:
