@@ -867,6 +867,7 @@ cdef class Context:
 		def __set__(self,profile):
 			self.currentProfile = profile
 			ccsSetProfile(self.ccsContext, profile.Name)
+			ccsReadSettings(self.ccsContext)
 	property Profiles:
 		def __get__(self):
 			return self.profiles
@@ -876,6 +877,7 @@ cdef class Context:
 		def __set__(self,backend):
 			self.currentBackend = backend
 			ccsSetBackend(self.ccsContext, backend.Name)
+			ccsReadSettings(self.ccsContext)
 	property Backends:
 		def __get__(self):
 			return self.backends
@@ -888,4 +890,5 @@ cdef class Context:
 		def __set__(self, value):
 			self.integration = value
 			ccsSetIntegrationEnabled(self.ccsContext, value)
+			ccsReadSettings(self.ccsContext)
 
