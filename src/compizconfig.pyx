@@ -646,6 +646,10 @@ cdef class Plugin:
 	property Category:
 		def __get__(self):
 			return self.ccsPlugin.category
+	property Features:
+		def __get__(self):
+			features = StringListToList(self.ccsPlugin.providesFeature)
+			return features
 	property Enabled:
 		def __get__(self):
 			return ccsPluginIsActive(self.context.ccsContext, self.ccsPlugin.name);
