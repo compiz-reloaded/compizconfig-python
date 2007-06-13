@@ -653,7 +653,7 @@ cdef class Plugin:
 			return features
 	property Enabled:
 		def __get__(self):
-			return ccsPluginIsActive(self.context.ccsContext, self.ccsPlugin.name);
+			return bool(ccsPluginIsActive(self.context.ccsContext, self.ccsPlugin.name))
 		def __set__(self,val):
 			if val:
 				if len(self.EnableConflicts):
