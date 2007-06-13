@@ -276,6 +276,8 @@ cdef extern void ccsSetProfile(CCSContext * context, char * name)
 cdef extern CCSBackendInfoList * ccsGetExistingBackends()
 cdef extern Bool ccsSetBackend(CCSContext * context, char * name)
 
+cdef extern void ccsSetIntegrationEnabled(CCSContext * context, Bool value)
+
 cdef extern void ccsReadSettings(CCSContext * c)
 cdef extern void ccsWriteSettings(CCSContext * c)
 cdef extern void ccsWriteChangedSettings(CCSContext * c)
@@ -767,6 +769,7 @@ cdef class Context:
 	cdef object backends
 	cdef object currentBackend
 	cdef int nScreens
+	cdef Bool integration
 
 	def __new__(self,screens=[0],nScreens=1):
 		cdef CCSPlugin * pl
@@ -776,7 +779,7 @@ cdef class Context:
 		cdef unsigned int * screensBuf
 		screensBuf = <unsigned int *> malloc(sizeof(unsigned int)*nScreens)
 		for i in range(nScreens):
-			screensBuf[i] = screens[i]
+			screensBuf[i]=screens[i]
 		self.ccsContext=ccsContextNew(screensBuf, nScreens)
 		free(screensBuf)
 		ccsReadSettings(self.ccsContext)
@@ -793,6 +796,8 @@ cdef class Context:
 				self.categories[cat]=[]
 			self.categories[cat].append(self.plugins[pl.name])
 			pll=pll.next
+
+		self.integration = self.ccsContext.deIntegration
 		
 		self.UpdateProfiles()
 		
@@ -861,3 +866,10 @@ cdef class Context:
 	property NScreens:
 		def __get__(self):
 			return self.nScreens
+	property Integration:
+		def __get__(self):
+			return self.integration
+		def __set__(self, value):
+			self.integration = value
+			ccsSetIntegrationEnabled(self.ccsContext, value)
+
