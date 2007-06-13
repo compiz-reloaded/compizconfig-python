@@ -738,12 +738,16 @@ cdef class Backend:
 	cdef char * name
 	cdef char * shortDesc
 	cdef char * longDesc
+	cdef Bool profileSupport
+	cdef Bool integrationSupport
 
 	def __new__(self, Context context, info):
 		self.context = context
 		self.name = strdup(info[0])
 		self.shortDesc = strdup(info[1])
 		self.longDesc = strdup(info[2])
+		self.profileSupport = bool(info[3])
+		self.integrationSupport = bool(info[4])
 	
 	def __dealloc__(self):
 		free(self.name)
@@ -759,6 +763,12 @@ cdef class Backend:
 	property LongDesc:
 		def __get__(self):
 			return self.longDesc
+	property IntegrationSupport:
+		def __get__(self):
+			return self.integrationSupport
+	property ProfileSupport:
+		def __get__(self):
+			return self.profileSupport
 
 cdef class Context:
 	cdef CCSContext * ccsContext
@@ -831,7 +841,9 @@ cdef class Context:
 		backendList=ccsGetExistingBackends()
 		while backendList != NULL:
 			backendInfo = <CCSBackendInfo *> backendList.data
-			self.backends[backendInfo.name] = Backend(self,(backendInfo.name, backendInfo.shortDesc, backendInfo.longDesc))
+			info = (backendInfo.name, backendInfo.shortDesc, backendInfo.longDesc, \
+					backendInfo.profileSupport, backendInfo.integrationSupport)
+			self.backends[backendInfo.name] = Backend(self, info)
 			backendList=backendList.next
 		self.currentBackend=self.backends[self.ccsContext.backend.vTable.name]
 		
