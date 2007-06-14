@@ -881,7 +881,7 @@ cdef class Context:
 			return self.nScreens
 	property Integration:
 		def __get__(self):
-			return self.integration
+			return bool(self.integration)
 		def __set__(self, value):
 			self.integration = value
 			ccsSetIntegrationEnabled(self.ccsContext, value)
