@@ -29,18 +29,14 @@ cdef enum CCSSettingType:
 	TypeNum
 
 cdef enum CCSPluginConflictType:
-	#activate
-	ConflictRequiresPlugin
-	ConflictRequiresFeature
-	ConflictFeature
-	ConflictPlugin
-	#deactivate
-	ConflictFeatureNeeded
-	ConflictPluginNeeded
-	#once more back to activate
-	#this last one is if the
-	#plugin requires a plugin
-	#that does not exist
+	# produced on plugin activation
+	ConflictRequiresPlugin,
+	ConflictRequiresFeature,
+	ConflictFeature,
+	ConflictPlugin,
+	# produced on plugin deactivation
+	ConflictFeatureNeeded,
+	ConflictPluginNeeded,
 	ConflictPluginError
 
 SettingTypeString=[
@@ -58,10 +54,10 @@ ConflictTypeString=[
 		'RequiresPlugin', #A
 		'RequiresFeature', #A
 		'ConflictFeature', #A
-		'ConflictPlugin' #A
+		'ConflictPlugin', #A
 		'FeatureNeeded', #D
 		'PluginNeeded', #D
-		'PluginError'] #A
+		'PluginError']
 
 cdef struct CCSList:
 	void * data
