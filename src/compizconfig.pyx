@@ -279,6 +279,9 @@ cdef extern void ccsWriteSettings(CCSContext * c)
 cdef extern void ccsWriteChangedSettings(CCSContext * c)
 cdef extern void ccsResetToDefault(CCSSetting * s)
 
+cdef extern Bool ccsExportToFile(CCSContext * context, char * fileName)
+cdef extern Bool ccsImportFromFile(CCSContext * context, char * fileName, Bool overwrite)
+
 cdef extern Bool ccsSettingIsReadOnly(CCSSetting * setting)
 cdef extern Bool ccsSettingIsIntegrated(CCSSetting * setting)
 
@@ -845,6 +848,12 @@ cdef class Context:
 
 	def ResetProfile(self):
 		ccsSetProfile(self.ccsContext, "")
+
+	def Import(self, path):
+		return bool(ccsImportFromFile(self.ccsContext, path, True))
+
+	def Export(self, path):
+		return bool(ccsExportToFile(self.ccsContext, path))
 
 	property Plugins:
 		def __get__(self):
