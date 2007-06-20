@@ -1,5 +1,5 @@
 AC_PREREQ(2.57)
-AC_INIT([compizconfig-bindings],0.0.1, [livinglatexkali@gmail.com])
+AC_INIT([compizconfig-python],0.0.1, [livinglatexkali@gmail.com])
 
 AM_INIT_AUTOMAKE([1.9 dist-bzip2])
 AC_CONFIG_HEADER([config.h])
@@ -38,7 +38,7 @@ then
 fi
 
 AC_CONFIG_FILES([
-	compizconfig-bindings.pc
+	compizconfig-python.pc
 	Makefile
 	src/Makefile
 ])

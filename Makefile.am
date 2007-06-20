@@ -1,7 +1,7 @@
 SUBDIRS = src
 
 EXTRA_DIST = \
-	compizconfig-bindings.pc.in
+	compizconfig-python.pc.in
 
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = compizconfig-bindings.pc
+pkgconfig_DATA = compizconfig-python.pc
