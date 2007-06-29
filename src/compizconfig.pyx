@@ -195,6 +195,9 @@ cdef struct CCSContext:
 	Bool deIntegration
 	CCSSettingList * changedSettings
 	Bool pluginsChanged
+	unsigned int configWatchId
+	unsigned int *	screens
+	unsigned int numScreens
 
 cdef struct CCSPlugin
 
