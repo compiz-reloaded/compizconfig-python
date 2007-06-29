@@ -279,6 +279,9 @@ cdef extern void ccsWriteSettings(CCSContext * c)
 cdef extern void ccsWriteChangedSettings(CCSContext * c)
 cdef extern void ccsResetToDefault(CCSSetting * s)
 
+ProcessEventsNoGlibMainLoopMask = (1 << 0)
+cdef extern void ccsProcessEvents(CCSContext * context, unsigned int flags)
+
 cdef extern Bool ccsExportToFile(CCSContext * context, char * fileName)
 cdef extern Bool ccsImportFromFile(CCSContext * context, char * fileName, Bool overwrite)
 
@@ -813,6 +816,14 @@ cdef class Context:
 	def __dealloc__(self):
 		ccsContextDestroy(self.ccsContext)
 
+	# Return True if some settings changed => settings manager should update its widgets
+	def ProcessEvents(self, flags=0):
+		ccsProcessEvents(self.ccsContext, flags)
+		if self.ccsContext.changedSettings != NULL:
+			self.Read()
+			return True
+		return False
+
 	def Write(self,onlyChanged=True):
 		if onlyChanged:
 			ccsWriteChangedSettings(self.ccsContext)
@@ -844,8 +855,7 @@ cdef class Context:
 			self.backends[backendInfo.name] = Backend(self, info)
 			backendList=backendList.next
 		self.currentBackend=self.backends[self.ccsContext.backend.vTable.name]
-		
-
+	
 	def ResetProfile(self):
 		ccsSetProfile(self.ccsContext, "")
 
