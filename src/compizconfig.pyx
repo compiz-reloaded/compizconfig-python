@@ -267,6 +267,7 @@ cdef extern void ccsStringListToEdges (CCSStringList * edges, CCSSettingActionVa
 cdef extern Bool ccsSetValue(CCSSetting * setting, CCSSettingValue * value)
 cdef extern void ccsFreeSettingValue(CCSSettingValue * value)
 cdef extern CCSSettingValueList * ccsSettingValueListAppend(CCSSettingValueList * l, CCSSettingValue * v)
+cdef extern CCSSettingList *ccsSettingListFree (CCSSettingList *list, Bool freeObj)
 
 cdef extern CCSStringList * ccsGetExistingProfiles(CCSContext * context)
 cdef extern void ccsDeleteProfile(CCSContext * context, char * name)
@@ -826,6 +827,10 @@ cdef class Context:
 			self.Read()
 			return True
 		return False
+
+	def ClearChangedSettings(self):
+		if self.ccsContext.changedSettings != NULL:
+			self.ccsContext.changedSettings = ccsSettingListFree(self.ccsContext.changedSettings, False)
 
 	def Write(self,onlyChanged=True):
 		if onlyChanged:
