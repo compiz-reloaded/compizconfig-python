@@ -385,6 +385,7 @@ cdef CCSSettingValue * EncodeValue(object data, CCSSetting * setting, Bool isLis
 			bv.value.asAction.onBell = 0
 		l = ListToStringList(data[3])
 		ccsStringListToEdges(l,&bv.value.asAction)
+		bv.value.asAction.edgeButton = data[4]
 	elif t == TypeList:
 		l = NULL
 		for item in data:
@@ -401,6 +402,7 @@ cdef object DecodeValue(CCSSettingValue * value):
 	cdef object ks
 	cdef object bs
 	cdef object es
+	cdef object eb
 	t = GetType(value)
 	if t == TypeString:
 		return value.value.asString
@@ -442,7 +444,8 @@ cdef object DecodeValue(CCSSettingValue * value):
 		bb=False
 		if value.value.asAction.onBell:
 			bb=True
-		return [ks,bs,bb,es]
+		eb=int(value.value.asAction.edgeButton)
+		return [ks,bs,bb,es,eb]
 	if t == TypeList:
 		lret=[]
 		l = value.value.asList
