@@ -242,8 +242,10 @@ cdef struct CCSPluginConflict:
 
 
 cdef extern CCSContext * ccsContextNew(unsigned int * screens, unsigned int numScreens)
+cdef extern CCSContext * ccsEmptyContextNew(unsigned int * screens, unsigned int numScreens)
 cdef extern void ccsContextDestroy(CCSContext * context)
 
+cdef extern Bool ccsLoadPlugin(CCSContext * context, char * name)
 cdef extern CCSPlugin * ccsFindPlugin(CCSContext * context, char * name)
 cdef extern CCSSetting * ccsFindSetting(CCSPlugin * plugin, char * name, Bool isScreen, int screenNum)
 cdef extern CCSSettingList * ccsGetPluginSettings(CCSPlugin * plugin)
@@ -789,7 +791,7 @@ cdef class Context:
 	cdef int nScreens
 	cdef Bool integration
 
-	def __new__(self,screens=[0]):
+	def __new__(self,screens=[0],plugins=[]):
 		cdef CCSPlugin * pl
 		cdef CCSList * pll
 		self.nScreens=nScreens=len(screens)
@@ -798,7 +800,12 @@ cdef class Context:
 		screensBuf = <unsigned int *> malloc(sizeof(unsigned int)*nScreens)
 		for i in range(nScreens):
 			screensBuf[i]=screens[i]
-		self.ccsContext=ccsContextNew(screensBuf, nScreens)
+		if plugins == []:
+			self.ccsContext=ccsContextNew(screensBuf, nScreens)
+		else:
+			self.ccsContext=ccsEmptyContextNew(screensBuf, nScreens)
+		for plugin in plugins:
+			self.LoadPlugin (plugin)
 		free(screensBuf)
 		ccsReadSettings(self.ccsContext)
 		pll=self.ccsContext.plugins
@@ -822,6 +829,9 @@ cdef class Context:
 
 	def __dealloc__(self):
 		ccsContextDestroy(self.ccsContext)
+
+	def LoadPlugin(self, plugin):
+		return ccsLoadPlugin(self.ccsContext, plugin)
 
 	# Return True if some settings changed => settings manager should update its widgets
 	def ProcessEvents(self, flags=0):
