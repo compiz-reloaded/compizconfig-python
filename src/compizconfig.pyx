@@ -789,10 +789,10 @@ cdef class Context:
 	cdef int nScreens
 	cdef Bool integration
 
-	def __new__(self,screens=[0],nScreens=1):
+	def __new__(self,screens=[0]):
 		cdef CCSPlugin * pl
 		cdef CCSList * pll
-		self.nScreens=nScreens
+		self.nScreens=nScreens=len(screens)
 		self.plugins={}
 		cdef unsigned int * screensBuf
 		screensBuf = <unsigned int *> malloc(sizeof(unsigned int)*nScreens)
