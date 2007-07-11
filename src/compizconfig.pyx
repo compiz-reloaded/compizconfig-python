@@ -241,6 +241,7 @@ cdef struct CCSPluginConflict:
 	CCSPluginList * plugins
 
 
+cdef extern void ccsSetBasicMetadata(Bool value)
 cdef extern CCSContext * ccsContextNew(unsigned int * screens, unsigned int numScreens)
 cdef extern CCSContext * ccsEmptyContextNew(unsigned int * screens, unsigned int numScreens)
 cdef extern void ccsContextDestroy(CCSContext * context)
@@ -791,9 +792,11 @@ cdef class Context:
 	cdef int nScreens
 	cdef Bool integration
 
-	def __new__(self,screens=[0],plugins=[]):
+	def __new__(self,screens=[0],plugins=[],basic_metadata=False):
 		cdef CCSPlugin * pl
 		cdef CCSList * pll
+		if basic_metadata:
+			ccsSetBasicMetadata(True)
 		self.nScreens=nScreens=len(screens)
 		self.plugins={}
 		cdef unsigned int * screensBuf
