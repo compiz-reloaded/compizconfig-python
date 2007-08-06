@@ -190,14 +190,8 @@ cdef struct CCSContext:
 	CCSPluginList * plugins
 	CCSPluginCategory * categories
 	void * priv
-	CCSBackend * backend
-	char * profile
-	Bool deIntegration
-	Bool pluginListAutoSort
+	void * ccsPrivate
 	CCSSettingList * changedSettings
-	unsigned int configWatchId
-	unsigned int *	screens
-	unsigned int numScreens
 
 cdef struct CCSPlugin
 
@@ -275,14 +269,17 @@ cdef extern CCSSettingList *ccsSettingListFree (CCSSettingList *list, Bool freeO
 cdef extern CCSStringList * ccsGetExistingProfiles(CCSContext * context)
 cdef extern void ccsDeleteProfile(CCSContext * context, char * name)
 cdef extern void ccsSetProfile(CCSContext * context, char * name)
+cdef extern char* ccsGetProfile(CCSContext * context)
 
 cdef extern CCSBackendInfoList * ccsGetExistingBackends()
 cdef extern Bool ccsSetBackend(CCSContext * context, char * name)
+cdef extern char* ccsGetBackend(CCSContext * context)
 
 cdef extern void ccsSetPluginListAutoSort (CCSContext *context, Bool value)
 cdef extern Bool ccsGetPluginListAutoSort (CCSContext *context)
 
 cdef extern void ccsSetIntegrationEnabled(CCSContext * context, Bool value)
+cdef extern Bool ccsGetIntegrationEnabled(CCSContext * context)
 
 cdef extern void ccsReadSettings(CCSContext * c)
 cdef extern void ccsWriteSettings(CCSContext * c)
@@ -828,7 +825,7 @@ cdef class Context:
 			self.categories[cat].append(self.plugins[pl.name])
 			pll=pll.next
 
-		self.integration = self.ccsContext.deIntegration
+		self.integration = ccsGetIntegrationEnabled(self.ccsContext)
 		
 		self.UpdateProfiles()
 		
@@ -862,7 +859,7 @@ cdef class Context:
 
 	def UpdateProfiles(self):
 		self.profiles={}
-		self.currentProfile=Profile(self,self.ccsContext.profile)
+		self.currentProfile=Profile(self,ccsGetProfile(self.ccsContext))
 		cdef CCSStringList * profileList
 		cdef char * profileName
 		profileList=ccsGetExistingProfiles(self.ccsContext)
@@ -881,7 +878,7 @@ cdef class Context:
 					backendInfo.profileSupport, backendInfo.integrationSupport)
 			self.backends[backendInfo.name] = Backend(self, info)
 			backendList=backendList.next
-		self.currentBackend=self.backends[self.ccsContext.backend.vTable.name]
+		self.currentBackend=self.backends[ccsGetBackend(self.ccsContext)]
 	
 	def ResetProfile(self):
 		ccsSetProfile(self.ccsContext, "")
