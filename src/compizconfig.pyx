@@ -72,31 +72,6 @@ ctypedef CCSList CCSSettingValueList
 ctypedef CCSList CCSBackendInfoList
 ctypedef CCSList CCSIntDescList
 
-cdef struct CCSBackendVTable:
-	char * name
-	char * shortDesc
-	char * longDesc
-	Bool integrationSupport
-	Bool profileSupport
-
-	void * executeEvents
-	void * backendInit
-	void * backendFini
-	void * readInit
-	void * readSetting
-	void * readDone
-	void * writeInit
-	void * writeSetting
-	void * writeDone
-	void * getSettingIsIntegrated
-	void * getSettingIsReadOnly
-	void * getExistingProfiles
-	void * deleteProfile
-
-cdef struct CCSBackend:
-	void * dlhand
-	CCSBackendVTable * vTable
-
 cdef struct CCSBackendInfo:
 	char *	name
 	char *	shortDesc
@@ -256,7 +231,6 @@ cdef extern from 'string.h':
 	cdef extern void memset(void * s, int c, size_t n)
 	cdef extern void free(void * f)
 	cdef extern void * malloc(size_t s)
-
 
 cdef extern Bool ccsStringToKeyBinding(char * value, CCSSettingActionValue * target)
 cdef extern Bool ccsStringToButtonBinding(char * value, CCSSettingActionValue * target)
