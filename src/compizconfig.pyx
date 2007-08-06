@@ -193,8 +193,8 @@ cdef struct CCSContext:
 	CCSBackend * backend
 	char * profile
 	Bool deIntegration
+	Bool pluginListAutoSort
 	CCSSettingList * changedSettings
-	Bool pluginsChanged
 	unsigned int configWatchId
 	unsigned int *	screens
 	unsigned int numScreens
@@ -224,6 +224,7 @@ cdef struct CCSPlugin:
 	char * longDesc
 	char * hints
 	char * category
+	Bool active
 	CCSStringList * loadAfter
 	CCSStringList * loadBefore
 	CCSStringList * requiresPlugin
@@ -278,6 +279,9 @@ cdef extern void ccsSetProfile(CCSContext * context, char * name)
 
 cdef extern CCSBackendInfoList * ccsGetExistingBackends()
 cdef extern Bool ccsSetBackend(CCSContext * context, char * name)
+
+cdef extern void ccsSetPluginListAutoSort (CCSContext *context, Bool value)
+cdef extern Bool ccsGetPluginListAutoSort (CCSContext *context)
 
 cdef extern void ccsSetIntegrationEnabled(CCSContext * context, Bool value)
 
@@ -670,11 +674,11 @@ cdef class Plugin:
 			if val:
 				if len(self.EnableConflicts):
 					return
-				ccsPluginSetActive(self.ccsPlugin, True);
+				ccsPluginSetActive(self.ccsPlugin, True)
 			else:
 				if len(self.DisableConflicts):
 					return
-				ccsPluginSetActive(self.ccsPlugin, False);
+				ccsPluginSetActive(self.ccsPlugin, False)
 	property EnableConflicts:
 		def __get__(self):
 			cdef CCSPluginConflictList * pl, * pls
@@ -915,6 +919,11 @@ cdef class Context:
 	property Backends:
 		def __get__(self):
 			return self.backends
+	property AutoSort:
+		def __get__(self):
+			return bool(ccsGetPluginListAutoSort(self.ccsContext))
+		def __set__(self, value):
+			ccsSetPluginListAutoSort(self.ccsContext, bool(value))
 	property NScreens:
 		def __get__(self):
 			return self.nScreens
