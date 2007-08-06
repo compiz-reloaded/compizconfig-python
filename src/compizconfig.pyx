@@ -167,6 +167,8 @@ cdef struct CCSContext:
 	void * priv
 	void * ccsPrivate
 	CCSSettingList * changedSettings
+	unsigned int * screens
+	unsigned int numScreens
 
 cdef struct CCSPlugin
 
