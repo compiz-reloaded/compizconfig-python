@@ -224,7 +224,6 @@ cdef struct CCSPlugin:
 	char * longDesc
 	char * hints
 	char * category
-	Bool active
 	CCSStringList * loadAfter
 	CCSStringList * loadBefore
 	CCSStringList * requiresPlugin
