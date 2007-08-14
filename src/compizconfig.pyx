@@ -280,6 +280,7 @@ cdef extern Bool ccsPluginIsActive(CCSContext * c, char * n)
 
 cdef class Context
 cdef class Plugin
+cdef class Setting
 
 cdef CCSSettingType GetType(CCSSettingValue * value):
 	if (value.isListChild):
@@ -314,6 +315,47 @@ cdef object StringListToList(CCSList * stringList):
 		item = <char *> stringList.data
 		list.append(item)
 		stringList = stringList.next
+	return list
+
+cdef CCSSettingList * ListToSettingList(object list):
+	if len(list) <= 0:
+		return NULL
+
+	cdef CCSSettingList * listStart
+	cdef CCSSettingList * settingList
+	cdef CCSSettingList * prev
+	cdef Setting setting
+
+	listStart = <CCSSettingList *> malloc(sizeof(CCSSettingList))
+	setting = <Setting> list[0]
+	listStart.data = <CCSSetting *> setting.ccsSetting
+	listStart.next = NULL
+	prev = listStart
+	
+	for l in list[1:]:
+		settingList = <CCSSettingList *> malloc(sizeof(CCSSettingList))
+		setting = <Setting> l
+		settingList.data = <CCSSetting *> setting.ccsSetting
+		settingList.next = NULL
+		prev.next = settingList
+		prev = settingList
+	
+	return listStart
+
+cdef object SettingListToList(Context context, CCSList * settingList):
+	cdef CCSSetting * ccsSetting
+	list = []
+	
+	while settingList:
+		ccsSetting = <CCSSetting *> settingList.data
+		setting = None
+		if ccsSetting.isScreen:
+			setting = context.Plugins[ccsSetting.parent.name].Screens[ccsSetting.screenNum][ccsSetting.name]
+		else:
+			setting = context.Plugins[ccsSetting.parent.name].Display[ccsSetting.name]
+		list.append(setting)
+		settingList = settingList.next
+	
 	return list
 
 cdef object IntDescListToDict(CCSIntDescList * intDescList):
@@ -812,17 +854,15 @@ cdef class Context:
 	def LoadPlugin(self, plugin):
 		return ccsLoadPlugin(self.ccsContext, plugin)
 
-	# Return True if some settings changed => settings manager should update its widgets
+	# Returns the settings that should be updated
 	def ProcessEvents(self, flags=0):
+		cdef CCSSettingList * sl
+		cdef CCSSetting * ccsSetting
 		ccsProcessEvents(self.ccsContext, flags)
-		if self.ccsContext.changedSettings != NULL:
+		if self.ChangedSettings != None:
 			self.Read()
 			return True
 		return False
-
-	def ClearChangedSettings(self):
-		if self.ccsContext.changedSettings != NULL:
-			self.ccsContext.changedSettings = ccsSettingListFree(self.ccsContext.changedSettings, False)
 
 	def Write(self,onlyChanged=True):
 		if onlyChanged:
@@ -891,6 +931,17 @@ cdef class Context:
 	property Backends:
 		def __get__(self):
 			return self.backends
+	property ChangedSettings:
+		def __get__(self):
+			return SettingListToList(self, self.ccsContext.changedSettings)
+		def __set__(self, value):
+			cdef CCSSettingList * settingList
+			if self.ccsContext.changedSettings != NULL:
+				self.ccsContext.changedSettings = ccsSettingListFree(self.ccsContext.changedSettings, False)
+			if value != None and len(value) != 0:
+				settingList = ListToSettingList(value)
+				self.ccsContext.changedSettings = settingList
+				
 	property AutoSort:
 		def __get__(self):
 			return bool(ccsGetPluginListAutoSort(self.ccsContext))
