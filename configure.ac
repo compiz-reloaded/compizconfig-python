@@ -1,5 +1,5 @@
 AC_PREREQ(2.57)
-AC_INIT([compizconfig-python],0.0.1, [livinglatexkali@gmail.com])
+AC_INIT([compizconfig-python],0.5.2, [livinglatexkali@gmail.com])
 
 AM_INIT_AUTOMAKE([1.9 dist-bzip2])
 AC_CONFIG_HEADER([config.h])
@@ -12,7 +12,7 @@ AC_PROG_LIBTOOL
 AC_HEADER_STDC
 
 CCS_REQUIRES="\
-libcompizconfig >= 0.0.1 \
+libcompizconfig >= 0.5.2 \
 glib-2.0 >= 2.6 "
 
 PKG_CHECK_MODULES(CCS,$CCS_REQUIRES)
