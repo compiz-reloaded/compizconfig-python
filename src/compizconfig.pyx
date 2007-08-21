@@ -22,10 +22,13 @@ cdef enum CCSSettingType:
 	TypeInt
 	TypeFloat
 	TypeString
-	TypeAction
 	TypeColor
 	TypeMatch
 	TypeList
+	TypeKey
+	TypeButton
+	TypeEdge
+	TypeBell
 	TypeNum
 
 cdef enum CCSPluginConflictType:
@@ -44,10 +47,13 @@ SettingTypeString=[
 		'Int',
 		'Float',
 		'String',
-		'Action',
 		'Color',
 		'Match',
 		'List',
+		'Key',
+		'Button',
+		'Edge',
+		'Bell',
 		'Invalid']
 
 ConflictTypeString=[
@@ -79,14 +85,14 @@ cdef struct CCSBackendInfo:
 	Bool integrationSupport
 	Bool profileSupport
 
-cdef struct CCSSettingActionValue:
-	int button
-	unsigned int buttonModMask
+cdef struct CCSSettingKeyValue:
 	int keysym
 	unsigned int keyModMask
-	Bool onBell
+
+cdef struct CCSSettingButtonValue:
+	int button
+	unsigned int buttonModMask
 	int edgeMask
-	int edgeButton
 
 cdef struct CCSSettingColorValueColor:
 	unsigned short red
@@ -104,9 +110,12 @@ cdef union CCSSettingValueUnion:
 	float asFloat
 	char * asString
 	char * asMatch
-	CCSSettingActionValue asAction
 	CCSSettingColorValue asColor
 	CCSSettingValueList * asList
+	CCSSettingKeyValue    asKey
+	CCSSettingButtonValue asButton
+	unsigned int	      asEdge
+	Bool		      asBell
 
 cdef struct CCSIntDesc:
 	int  value
@@ -122,15 +131,6 @@ cdef struct CCSSettingFloatInfo:
 	float max
 	float precision
 
-cdef struct CCSSettingActionInfo:
-	Bool key
-	Bool button
-	Bool bell
-	Bool edge
-
-cdef struct CCSSettingActionArrayInfo:
-	Bool array[4]
-
 cdef struct CCSSettingListInfo:
 	CCSSettingType listType
 	void * listInfo				#actually CCSSettingInfo *, works around pyrex
@@ -138,8 +138,6 @@ cdef struct CCSSettingListInfo:
 cdef union CCSSettingInfo:
 	CCSSettingIntInfo forInt
 	CCSSettingFloatInfo forFloat
-	CCSSettingActionInfo forAction
-	CCSSettingActionArrayInfo forActionAsArray
 	CCSSettingListInfo forList
 
 cdef struct CCSSettingValue:
@@ -223,9 +221,11 @@ cdef extern CCSSetting * ccsFindSetting(CCSPlugin * plugin, char * name, Bool is
 cdef extern CCSSettingList * ccsGetPluginSettings(CCSPlugin * plugin)
 cdef extern CCSGroupList * ccsGetPluginGroups(CCSPlugin * plugin)
 
-cdef extern CCSStringList * ccsEdgesToStringList (CCSSettingActionValue * action)
-cdef extern char * ccsKeyBindingToString(CCSSettingActionValue * action)
-cdef extern char * ccsButtonBindingToString(CCSSettingActionValue * action)
+cdef extern char * ccsModifiersToString (unsigned int modMask)
+cdef extern char * ccsEdgesToString (unsigned int edge)
+cdef extern char * ccsEdgesToModString (unsigned int edge)
+cdef extern char * ccsKeyBindingToString (CCSSettingKeyValue *key)
+cdef extern char * ccsButtonBindingToString (CCSSettingButtonValue *button)
 
 cdef extern from 'string.h':
 	ctypedef int size_t
@@ -234,9 +234,13 @@ cdef extern from 'string.h':
 	cdef extern void free(void * f)
 	cdef extern void * malloc(size_t s)
 
-cdef extern Bool ccsStringToKeyBinding(char * value, CCSSettingActionValue * target)
-cdef extern Bool ccsStringToButtonBinding(char * value, CCSSettingActionValue * target)
-cdef extern void ccsStringListToEdges (CCSStringList * edges, CCSSettingActionValue * target)
+cdef extern unsigned int ccsStringToModifiers (char *binding)
+cdef extern unsigned int ccsStringToEdges (char *edge)
+cdef extern unsigned int ccsModStringToEdges (char *edge)
+cdef extern Bool ccsStringToKeyBinding (char         *binding,
+					CCSSettingKeyValue *key)
+cdef extern Bool ccsStringToButtonBinding (char            *binding,
+					   CCSSettingButtonValue *button)
 cdef extern Bool ccsSetValue(CCSSetting * setting, CCSSettingValue * value)
 cdef extern void ccsFreeSettingValue(CCSSettingValue * value)
 cdef extern CCSSettingValueList * ccsSettingValueListAppend(CCSSettingValueList * l, CCSSettingValue * v)
@@ -397,16 +401,17 @@ cdef CCSSettingValue * EncodeValue(object data, CCSSetting * setting, Bool isLis
 		bv.value.asColor.color.green = data[1]
 		bv.value.asColor.color.blue = data[2]
 		bv.value.asColor.color.alpha = data[3]
-	elif t == TypeAction:
-		ccsStringToKeyBinding(data[0],&bv.value.asAction)
-		ccsStringToButtonBinding(data[1],&bv.value.asAction)
-		if (data[2]):
-			bv.value.asAction.onBell = 1
+	elif t == TypeKey:
+		ccsStringToKeyBinding(data,&bv.value.asKey)
+	elif t == TypeButton:
+		ccsStringToButtonBinding(data,&bv.value.asButton)
+	elif t == TypeEdge:
+		bv.value.asEdge = ccsStringToEdges(data)
+	elif t == TypeBell:
+		if (data):
+			bv.value.asBell = 1
 		else:
-			bv.value.asAction.onBell = 0
-		l = ListToStringList(data[3])
-		ccsStringListToEdges(l,&bv.value.asAction)
-		bv.value.asAction.edgeButton = data[4]
+			bv.value.asBell = 0
 	elif t == TypeList:
 		l = NULL
 		for item in data:
@@ -442,14 +447,16 @@ cdef object DecodeValue(CCSSettingValue * value):
 				value.value.asColor.color.green,
 				value.value.asColor.color.blue,
 				value.value.asColor.color.alpha]
-	if t == TypeAction:
-		s=ccsKeyBindingToString(&value.value.asAction)
+	if t == TypeKey:
+		s=ccsKeyBindingToString(&value.value.asKey)
 		if s != NULL:
 			ks=s
 			free(s)
 		else:
 			ks='None'
-		s=ccsButtonBindingToString(&value.value.asAction)
+		return ks
+	if t == TypeButton:
+		s=ccsButtonBindingToString(&value.value.asButton)
 		if s != NULL:
 			bs=s
 			free(s)
@@ -457,16 +464,20 @@ cdef object DecodeValue(CCSSettingValue * value):
 			bs='None'
 		if bs == 'Button0':
 			bs = 'None'
-		l=ccsEdgesToStringList(&value.value.asAction)
+		return bs
+	if t == TypeEdge:
+		s=ccsEdgesToString(value.value.asEdge)
 		if s != NULL:
-			es=StringListToList(l)
+			es=s
+			free(s)
 		else:
-			es=['None']
+			es='None'
+		return es
+	if t == TypeBell:
 		bb=False
-		if value.value.asAction.onBell:
+		if value.value.asBell:
 			bb=True
-		eb=int(value.value.asAction.edgeButton)
-		return [ks,bs,bb,es,eb]
+		return bb
 	if t == TypeList:
 		lret=[]
 		l = value.value.asList
@@ -499,9 +510,6 @@ cdef class Setting:
 		elif t == TypeFloat:
 			info=(i.forFloat.min,i.forFloat.max,
 					i.forFloat.precision)
-		elif t == TypeAction:
-			info=(i.forAction.key,i.forAction.button,
-					i.forAction.bell,i.forAction.edge)
 		if self.ccsSetting.type == TypeList:
 			info=(SettingTypeString[t],info)
 		self.info=info
