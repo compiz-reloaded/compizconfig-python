@@ -518,7 +518,7 @@ cdef object DecodeValue (CCSSettingValue * value):
             es = s
             free (s)
         else:
-            es='None'
+            es = 'None'
         return es
     if t == TypeBell:
         bb = False
