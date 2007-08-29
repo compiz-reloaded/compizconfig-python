@@ -1000,7 +1000,9 @@ cdef class Context:
         self.currentBackend = self.backends[ccsGetBackend (self.ccsContext)]
     
     def ResetProfile (self):
+        self.currentProfile = Profile (self, "")
         ccsSetProfile (self.ccsContext, "")
+        ccsReadSettings (self.ccsContext)
 
     def Import (self, path):
         return bool (ccsImportFromFile (self.ccsContext, path, True))
