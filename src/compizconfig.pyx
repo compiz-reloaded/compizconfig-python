@@ -958,8 +958,6 @@ cdef class Context:
 
     # Returns the settings that should be updated
     def ProcessEvents (self, flags = 0):
-        cdef CCSSettingList * sl
-        cdef CCSSetting * ccsSetting
         ccsProcessEvents (self.ccsContext, flags)
         if len (self.ChangedSettings):
             self.Read ()
