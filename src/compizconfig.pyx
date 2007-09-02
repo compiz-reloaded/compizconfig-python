@@ -961,7 +961,7 @@ cdef class Context:
         cdef CCSSettingList * sl
         cdef CCSSetting * ccsSetting
         ccsProcessEvents (self.ccsContext, flags)
-        if self.ChangedSettings != None:
+        if len (self.ChangedSettings):
             self.Read ()
             return True
         return False
