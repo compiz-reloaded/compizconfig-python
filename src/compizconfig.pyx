@@ -531,7 +531,7 @@ cdef object DecodeValue (CCSSettingValue * value):
         l = value.value.asList
         while l != NULL:
             lret.append (DecodeValue (<CCSSettingValue *> l.data))
-            l=l.next
+            l = l.next
         return lret
     return "Unhandled"
 
