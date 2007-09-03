@@ -451,9 +451,9 @@ cdef CCSSettingValue * EncodeValue (object       data,
         bv.value.asColor.color.blue = data[2]
         bv.value.asColor.color.alpha = data[3]
     elif t == TypeKey:
-        ccsStringToKeyBinding (data,&bv.value.asKey)
+        ccsStringToKeyBinding (data, &bv.value.asKey)
     elif t == TypeButton:
-        ccsStringToButtonBinding (data,&bv.value.asButton)
+        ccsStringToButtonBinding (data, &bv.value.asButton)
     elif t == TypeEdge:
         bv.value.asEdge = ccsStringToEdges (data)
     elif t == TypeBell:
@@ -636,9 +636,9 @@ cdef class SSGroup:
     cdef object display
     cdef object screens
 
-    def __new__(self, disp, scrn):
+    def __new__ (self, disp, screen):
         self.display = disp
-        self.screens = scrn
+        self.screens = screen
 
     property Display:
         def __get__ (self):
@@ -690,7 +690,7 @@ cdef class Plugin:
                 scr = []
                 for n in range (0, self.context.NScreens):
                     scr.append ({})
-                self.groups[gr.name][sgr.name] = SSGroup ({},scr)
+                self.groups[gr.name][sgr.name] = SSGroup ({}, scr)
                 sglist = sglist.next
             glist = glist.next
         setlist = ccsGetPluginSettings (self.ccsPlugin)
@@ -769,13 +769,13 @@ cdef class Plugin:
 
     property Initialized:
         def __get__ (self):
-            return bool(self.loaded)
+            return bool (self.loaded)
 
     property Enabled:
         def __get__ (self):
             return bool (ccsPluginIsActive (self.context.ccsContext,
                                             self.ccsPlugin.name))
-        def __set__ (self,val):
+        def __set__ (self, val):
             if val:
                 if len (self.EnableConflicts):
                     return
@@ -810,7 +810,7 @@ cdef class Plugin:
                 ret.append ((ConflictTypeString[pc.type], pc.value, rpl))
                 pls = pls.next
             if pl != NULL:
-                ccsPluginConflictListFree(pl, True)
+                ccsPluginConflictListFree (pl, True)
             return ret
 
     property DisableConflicts:
@@ -876,9 +876,9 @@ cdef class Backend:
         self.integrationSupport = bool (info[4])
     
     def __dealloc__ (self):
-        free(self.name)
-        free(self.shortDesc)
-        free(self.longDesc)
+        free (self.name)
+        free (self.shortDesc)
+        free (self.longDesc)
 
     property Name:
         def __get__ (self):
@@ -1019,7 +1019,7 @@ cdef class Context:
     property CurrentProfile:
         def __get__ (self):
             return self.currentProfile
-        def __set__ (self,profile):
+        def __set__ (self, profile):
             self.currentProfile = profile
             ccsSetProfile (self.ccsContext, profile.Name)
             ccsReadSettings (self.ccsContext)
@@ -1031,7 +1031,7 @@ cdef class Context:
     property CurrentBackend:
         def __get__ (self):
             return self.currentBackend
-        def __set__ (self,backend):
+        def __set__ (self, backend):
             self.currentBackend = backend
             ccsSetBackend (self.ccsContext, backend.Name)
             ccsReadSettings (self.ccsContext)
