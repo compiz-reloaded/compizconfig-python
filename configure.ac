@@ -12,7 +12,7 @@ AC_PROG_LIBTOOL
 AC_HEADER_STDC
 
 CCS_REQUIRES="\
-libcompizconfig >= 0.6.0 \
+libcompizconfig >= 0.6.99 \
 glib-2.0 >= 2.6 "
 
 PKG_CHECK_MODULES(CCS,$CCS_REQUIRES)
