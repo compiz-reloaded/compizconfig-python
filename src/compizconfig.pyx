@@ -309,7 +309,7 @@ ProcessEventsNoGlibMainLoopMask = (1 << 0)
 cdef extern void ccsProcessEvents (CCSContext * context, unsigned int flags)
 
 '''Import/export'''
-cdef extern Bool ccsExportToFile (CCSContext * context, char * fileName)
+cdef extern Bool ccsExportToFile (CCSContext * context, char * fileName, Bool skipDefaults)
 cdef extern Bool ccsImportFromFile (CCSContext * context,
                                     char *       fileName,
                                     Bool         overwrite)
@@ -1005,8 +1005,8 @@ cdef class Context:
     def Import (self, path):
         return bool (ccsImportFromFile (self.ccsContext, path, True))
 
-    def Export (self, path):
-        return bool (ccsExportToFile (self.ccsContext, path))
+    def Export (self, path, skipDefaults=False):
+        return bool (ccsExportToFile (self.ccsContext, path, skipDefaults))
 
     property Plugins:
         def __get__ (self):
