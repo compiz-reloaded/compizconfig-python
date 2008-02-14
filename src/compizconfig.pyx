@@ -1002,10 +1002,13 @@ cdef class Context:
         ccsSetProfile (self.ccsContext, "")
         ccsReadSettings (self.ccsContext)
 
-    def Import (self, path):
-        return bool (ccsImportFromFile (self.ccsContext, path, True))
+    def Import (self, path, autoSave = True):
+        ret = bool (ccsImportFromFile (self.ccsContext, path, True))
+        if autoSave:
+            ccsWriteSettings (self.ccsContext)
+        return ret
 
-    def Export (self, path, skipDefaults=False):
+    def Export (self, path, skipDefaults = False):
         return bool (ccsExportToFile (self.ccsContext, path, skipDefaults))
 
     property Plugins:
