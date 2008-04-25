@@ -143,10 +143,14 @@ cdef struct CCSSettingListInfo:
     CCSSettingType listType
     void *         listInfo # actually CCSSettingInfo *, works around pyrex
 
+cdef struct CCSSettingActionInfo:
+    Bool internal
+
 cdef union CCSSettingInfo:
-    CCSSettingIntInfo   forInt
-    CCSSettingFloatInfo forFloat
-    CCSSettingListInfo  forList
+    CCSSettingIntInfo    forInt
+    CCSSettingFloatInfo  forFloat
+    CCSSettingListInfo   forList
+    CCSSettingActionInfo forAction
 
 cdef struct CCSSettingValue:
     CCSSettingValueUnion value
@@ -559,6 +563,8 @@ cdef class Setting:
         elif t == TypeFloat:
             info = (i.forFloat.min, i.forFloat.max,
                     i.forFloat.precision)
+        elif t in (TypeKey, TypeButton, TypeEdge, TypeBell):
+            info = (bool (i.forAction.internal),)
         if self.ccsSetting.type == TypeList:
             info = (SettingTypeString[t], info)
         self.info = info
