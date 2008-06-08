@@ -544,7 +544,7 @@ cdef class Setting:
     cdef object info
     cdef Plugin plugin
 
-    def __new__ (self, Plugin plugin, name, isScreen, screenNum = 0):
+    def __cinit__ (self, Plugin plugin, name, isScreen, screenNum = 0):
         cdef CCSSettingType t
         cdef CCSSettingInfo * i
 
@@ -642,7 +642,7 @@ cdef class SSGroup:
     cdef object display
     cdef object screens
 
-    def __new__ (self, disp, screen):
+    def __cinit__ (self, disp, screen):
         self.display = disp
         self.screens = screen
 
@@ -667,7 +667,7 @@ cdef class Plugin:
     cdef object loaded
     cdef object ranking
     
-    def __new__ (self, Context context, name):
+    def __cinit__ (self, Context context, name):
         self.ccsPlugin = ccsFindPlugin (context.ccsContext, name)
         self.context = context
         self.screens = []
@@ -851,7 +851,7 @@ cdef class Profile:
     cdef Context context
     cdef char * name
 
-    def __new__ (self, Context context, name):
+    def __cinit__ (self, Context context, name):
         self.context = context
         self.name = strdup (name)
 
@@ -873,7 +873,7 @@ cdef class Backend:
     cdef Bool profileSupport
     cdef Bool integrationSupport
 
-    def __new__ (self, Context context, info):
+    def __cinit__ (self, Context context, info):
         self.context = context
         self.name = strdup (info[0])
         self.shortDesc = strdup (info[1])
@@ -917,7 +917,7 @@ cdef class Context:
     cdef int nScreens
     cdef Bool integration
 
-    def __new__ (self, screens = [0], plugins = [], basic_metadata = False):
+    def __cinit__ (self, screens = [0], plugins = [], basic_metadata = False):
         cdef CCSPlugin * pl
         cdef CCSList * pll
         if basic_metadata:
