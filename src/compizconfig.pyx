@@ -20,6 +20,9 @@ Authors:
 Copyright (C) 2007 Quinn Storm
 '''
 
+import operator
+StringSettingKeyFunc = operator.itemgetter (1)
+
 ctypedef unsigned int Bool
 
 cdef enum CCSSettingType:
@@ -85,6 +88,8 @@ ctypedef CCSList CCSPluginConflictList
 ctypedef CCSList CCSSettingValueList
 ctypedef CCSList CCSBackendInfoList
 ctypedef CCSList CCSIntDescList
+ctypedef CCSList CCSStrRestrictionList
+ctypedef CCSList CCSStrExtensionList
 
 cdef struct CCSBackendInfo:
     char *    name
@@ -129,6 +134,10 @@ cdef struct CCSIntDesc:
     int    value
     char * name
 
+cdef struct CCSStrRestriction:
+    char * value
+    char * name
+
 cdef struct CCSSettingIntInfo:
     int              min
     int              max
@@ -138,6 +147,11 @@ cdef struct CCSSettingFloatInfo:
     float min
     float max
     float precision
+
+cdef struct CCSSettingStringInfo:
+    CCSStrRestrictionList * restriction
+    int                     sortStartsAt
+    Bool                    extensible
 
 cdef struct CCSSettingListInfo:
     CCSSettingType listType
@@ -149,6 +163,7 @@ cdef struct CCSSettingActionInfo:
 cdef union CCSSettingInfo:
     CCSSettingIntInfo    forInt
     CCSSettingFloatInfo  forFloat
+    CCSSettingStringInfo forString
     CCSSettingListInfo   forList
     CCSSettingActionInfo forAction
 
@@ -206,6 +221,12 @@ cdef struct CCSSetting:
 
     CCSPlugin * parent
     void *      priv
+
+cdef struct CCSStrExtension:
+    char *                  basePlugin
+    CCSSettingList *        baseSettings
+    CCSStrRestrictionList * restriction
+    Bool                    isScreen
 
 cdef struct CCSPlugin:
     char * name
@@ -332,6 +353,8 @@ cdef extern CCSPluginConflictList * ccsCanDisablePlugin (CCSContext * c,
 cdef extern Bool ccsPluginSetActive (CCSPlugin * p, Bool v)
 cdef extern Bool ccsPluginIsActive (CCSContext * c, char * n)
 
+cdef extern CCSStrExtensionList * ccsGetPluginStrExtensions (CCSPlugin * plugin)
+
 cdef class Context
 cdef class Plugin
 cdef class Setting
@@ -421,6 +444,18 @@ cdef object IntDescListToDict (CCSIntDescList * intDescList):
         dict[desc.name] = desc.value
         intDescList = intDescList.next
     return dict
+
+cdef object StrRestrictionListToDict (CCSStrRestrictionList * restrictionList,
+                                      object initialDict):
+    cdef CCSStrRestriction * restriction
+    dict = initialDict
+    listOfAddedItems = []
+    while restrictionList:
+        restriction = <CCSStrRestriction *> restrictionList.data
+        dict[restriction.name] = restriction.value
+        listOfAddedItems.append ((restriction.name, restriction.value))
+        restrictionList = restrictionList.next
+    return (dict, listOfAddedItems)
 
 cdef CCSSettingValue * EncodeValue (object       data,
                                     CCSSetting * setting,
@@ -543,6 +578,8 @@ cdef class Setting:
     cdef CCSSetting * ccsSetting
     cdef object info
     cdef Plugin plugin
+    cdef object extendedStrRestrictions
+    cdef object baseStrRestrictions
 
     def __new__ (self, Plugin plugin, name, isScreen, screenNum = 0):
         cdef CCSSettingType t
@@ -551,6 +588,9 @@ cdef class Setting:
         self.ccsSetting = ccsFindSetting (plugin.ccsPlugin,
                                           name, isScreen, screenNum)
         self.plugin = plugin
+
+        self.extendedStrRestrictions = None
+        self.baseStrRestrictions = None
         info = ()
         t = self.ccsSetting.type
         i = &self.ccsSetting.info
@@ -563,6 +603,11 @@ cdef class Setting:
         elif t == TypeFloat:
             info = (i.forFloat.min, i.forFloat.max,
                     i.forFloat.precision)
+        elif t == TypeString:
+            # info is filled later in Plugin.SortSingleStringSetting
+            info = ({}, {}, [])
+            self.baseStrRestrictions = []
+            self.extendedStrRestrictions = {}
         elif t in (TypeKey, TypeButton, TypeEdge, TypeBell):
             info = (bool (i.forAction.internal),)
         if self.ccsSetting.type == TypeList:
@@ -666,6 +711,7 @@ cdef class Plugin:
     cdef object groups
     cdef object loaded
     cdef object ranking
+    cdef object hasExtendedString
     
     def __new__ (self, Context context, name):
         self.ccsPlugin = ccsFindPlugin (context.ccsContext, name)
@@ -675,6 +721,8 @@ cdef class Plugin:
         self.groups = {}
         self.loaded = False
         self.ranking = {}
+        self.hasExtendedString = False
+
         for n in range (0, context.NScreens):
             self.screens.append ({})
 
@@ -685,6 +733,8 @@ cdef class Plugin:
         cdef CCSSetting * sett
         cdef CCSGroup * gr
         cdef CCSSubGroup * sgr
+        cdef CCSSettingType t
+        cdef CCSSettingInfo * i
 
         glist = ccsGetPluginGroups (self.ccsPlugin)
         while glist != NULL:
@@ -700,7 +750,8 @@ cdef class Plugin:
                 sglist = sglist.next
             glist = glist.next
         setlist = ccsGetPluginSettings (self.ccsPlugin)
-        
+
+        self.hasExtendedString = False
         rank = 0
         while setlist != NULL:
             sett = <CCSSetting *> setlist.data
@@ -716,6 +767,14 @@ cdef class Plugin:
                 self.display[sett.name] = setting
                 subgroup.Display[sett.name] = setting
 
+            t = sett.type
+            i = &sett.info
+            if t == TypeList:
+                t = i.forList.listType
+                i = <CCSSettingInfo *> i.forList.listInfo
+            if t == TypeString and i.forString.extensible:
+                self.hasExtendedString = True
+
             if not self.ranking.has_key (sett.name):
                 self.ranking[sett.name] = rank
                 rank = rank + 1
@@ -723,6 +782,137 @@ cdef class Plugin:
             setlist = setlist.next
 
         self.loaded = True
+
+        if self.Enabled:
+            self.ApplyStringExtensions ()
+        self.SortStringSettings ()
+
+    def SortStringSettings (self):
+        for i in xrange (self.context.nScreens):
+            for name, setting in self.Screens[i].items ():
+                self.SortSingleStringSetting (setting)
+        for name, setting in self.Display.items ():
+            self.SortSingleStringSetting (setting)
+
+    def SortSingleStringSetting (self, Setting setting):
+        cdef CCSSettingType t
+        cdef CCSSettingInfo * i
+
+        t = setting.ccsSetting.type
+        i = &setting.ccsSetting.info
+        if t == TypeList:
+            t = i.forList.listType
+            i = <CCSSettingInfo *> i.forList.listInfo
+        if t != TypeString or i.forString.sortStartsAt < 0:
+            return
+
+        (itemsByName, listOfAddedItems) = \
+            StrRestrictionListToDict (i.forString.restriction,
+                                      setting.extendedStrRestrictions)
+
+        # Let base string restrictions be the ones given in the option metadata
+        # in the base plugin plus the ones found in the extensions in the same
+        # plugin.
+        setting.baseStrRestrictions = \
+            listOfAddedItems + setting.baseStrRestrictions
+
+        if i.forString.sortStartsAt == 0:
+            # Sort all items by value
+            sortedItems = sorted (itemsByName.items (),
+                                  key=StringSettingKeyFunc)
+        else:
+            # Sort first sortStartsAt many items by value and
+            # the remaining ones by name
+            itemsNotSorted = \
+                setting.baseStrRestrictions[:i.forString.sortStartsAt]
+            itemsNotSortedSet = set (itemsNotSorted)
+            allItemsSet = set (itemsByName.items ())
+            itemsSortedByName = sorted (list (allItemsSet - itemsNotSortedSet),
+                                        key=operator.itemgetter (0))
+            sortedItems = itemsNotSorted + itemsSortedByName
+
+        itemsByValue = {}
+        for (index, (name, value)) in enumerate (sortedItems):
+            itemsByValue[value] = (name, index)
+
+        # Insert itemsByName and sortedItems into setting.info
+        if setting.ccsSetting.type == TypeList:
+            setting.info = (setting.info[0], (itemsByName,
+                                              itemsByValue,
+                                              sortedItems))
+        else:
+            setting.info = (itemsByName, itemsByValue, sortedItems)
+
+    def ApplyStringExtensions (self, sortBaseSetting = True):
+        cdef CCSStrExtensionList * extList
+        cdef CCSStrExtension * ext
+        cdef char * baseSettingName
+        cdef CCSStringList * baseSettingList
+        cdef CCSSettingType t
+        cdef CCSSettingInfo * i
+        cdef CCSStrRestrictionList * restrictionList
+        cdef CCSStrRestriction * restriction
+        cdef Plugin basePlugin
+        cdef Setting setting
+
+        extList = ccsGetPluginStrExtensions (self.ccsPlugin)
+        while extList:
+            ext = <CCSStrExtension *> extList.data
+
+            basePlugin = self.context.Plugins[ext.basePlugin]
+
+            baseSettingList = ext.baseSettings
+            while baseSettingList:
+                baseSettingName = <char *> baseSettingList.data
+
+                if ext.isScreen:
+                    settings = []
+                    for x in xrange (self.context.nScreens):
+                        settings.append (basePlugin.Screens[x][baseSettingName])
+                else:
+                    settings = [basePlugin.Display[baseSettingName]]
+
+                for settingItem in settings:
+                    setting = settingItem
+                    t = setting.ccsSetting.type
+                    i = &setting.ccsSetting.info
+                    if t == TypeList:
+                        t = i.forList.listType
+                        i = <CCSSettingInfo *> i.forList.listInfo
+                    if not (t == TypeString and i.forString.extensible):
+                        return
+
+                    restrictionList = ext.restriction
+
+                    # Add each item in restriction list to the setting
+                    while restrictionList != NULL:
+                        restriction = <CCSStrRestriction *> restrictionList.data
+                        setting.extendedStrRestrictions[restriction.name] = \
+                            restriction.value
+                        if ext.basePlugin == self.Name:
+                            setting.baseStrRestrictions.append ((restriction.name,
+                                                                 restriction.value))
+                        restrictionList = restrictionList.next
+
+                    if sortBaseSetting:
+                        basePlugin.SortSingleStringSetting (setting)
+
+                baseSettingList = baseSettingList.next
+
+            extList = extList.next
+
+    def GetExtensionBasePlugins (self):
+        cdef CCSStrExtensionList * extList
+        cdef CCSStrExtension * ext
+
+        basePlugins = set ([])
+        extList = ccsGetPluginStrExtensions (self.ccsPlugin)
+        while extList:
+            ext = <CCSStrExtension *> extList.data
+            basePlugins.add (self.context.Plugins[ext.basePlugin])
+            extList = extList.next
+
+        return list (basePlugins)
 
     property Context:
         def __get__ (self):
@@ -955,6 +1145,27 @@ cdef class Context:
         self.integration = ccsGetIntegrationEnabled (self.ccsContext)
         
         self.UpdateProfiles ()
+
+    def UpdateExtensiblePlugins (self):
+        cdef Plugin plugin
+
+        # Reset all extensible plugins
+        for name, pluginItem in self.plugins.items ():
+            plugin = pluginItem
+            if plugin.hasExtendedString:
+                plugin.Update ()
+
+        # Apply enum extensions
+        for name, pluginItem in self.plugins.items ():
+            plugin = pluginItem
+            if plugin.Enabled:
+                plugin.ApplyStringExtensions (False)
+
+        # Sort enum settings
+        for name, pluginItem in self.plugins.items ():
+            plugin = pluginItem
+            if plugin.Enabled and plugin.hasExtendedString:
+                plugin.SortStringSettings ()
 
     def __dealloc__ (self):
         ccsContextDestroy (self.ccsContext)
