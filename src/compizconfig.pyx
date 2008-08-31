@@ -1162,7 +1162,8 @@ cdef class Context:
         # Apply restricted string extensions
         for name, pluginItem in self.plugins.items ():
             plugin = pluginItem
-            plugin.ApplyStringExtensions (False, plugin.Enabled)
+            if plugin.Enabled:
+                plugin.ApplyStringExtensions (False, True)
 
         # Sort restricted string settings
         for name, pluginItem in self.plugins.items ():
