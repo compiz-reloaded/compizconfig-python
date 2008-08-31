@@ -783,8 +783,7 @@ cdef class Plugin:
 
         self.loaded = True
 
-        if self.Enabled:
-            self.ApplyStringExtensions ()
+        self.ApplyStringExtensions (True, self.Enabled)
         self.SortStringSettings ()
 
     def SortStringSettings (self):
@@ -843,7 +842,7 @@ cdef class Plugin:
         else:
             setting.info = (itemsByName, itemsByValue, sortedItems)
 
-    def ApplyStringExtensions (self, sortBaseSetting = True):
+    def ApplyStringExtensions (self, sortBaseSetting, extendOthersToo):
         cdef CCSStrExtensionList * extList
         cdef CCSStrExtension * ext
         cdef char * baseSettingName
@@ -858,6 +857,11 @@ cdef class Plugin:
         extList = ccsGetPluginStrExtensions (self.ccsPlugin)
         while extList:
             ext = <CCSStrExtension *> extList.data
+
+            # If not extending others and extension base is not self, skip
+            if not (extendOthersToo or ext.basePlugin == self.Name):
+                extList = extList.next
+                continue
 
             basePlugin = self.context.Plugins[ext.basePlugin]
 
@@ -1155,13 +1159,12 @@ cdef class Context:
             if plugin.hasExtendedString:
                 plugin.Update ()
 
-        # Apply enum extensions
+        # Apply restricted string extensions
         for name, pluginItem in self.plugins.items ():
             plugin = pluginItem
-            if plugin.Enabled:
-                plugin.ApplyStringExtensions (False)
+            plugin.ApplyStringExtensions (False, plugin.Enabled)
 
-        # Sort enum settings
+        # Sort restricted string settings
         for name, pluginItem in self.plugins.items ():
             plugin = pluginItem
             if plugin.Enabled and plugin.hasExtendedString:
