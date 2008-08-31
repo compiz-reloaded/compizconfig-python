@@ -859,7 +859,8 @@ cdef class Plugin:
             ext = <CCSStrExtension *> extList.data
 
             # If not extending others and extension base is not self, skip
-            if not (extendOthersToo or ext.basePlugin == self.Name):
+            if (not (extendOthersToo or ext.basePlugin == self.Name)) or \
+            ext.basePlugin not in self.context.Plugins:
                 extList = extList.next
                 continue
 
