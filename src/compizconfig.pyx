@@ -736,18 +736,23 @@ cdef class Plugin:
         cdef CCSSettingType t
         cdef CCSSettingInfo * i
 
+        groupIndex = 0
         glist = ccsGetPluginGroups (self.ccsPlugin)
         while glist != NULL:
             gr = <CCSGroup *> glist.data
-            self.groups[gr.name] = {}
+            self.groups[gr.name] = (groupIndex, {})
+            subGroupIndex = 0
             sglist = gr.subGroups
             while sglist != NULL:
                 sgr = <CCSSubGroup *> sglist.data
                 scr = []
                 for n in range (0, self.context.NScreens):
                     scr.append ({})
-                self.groups[gr.name][sgr.name] = SSGroup ({}, scr)
+                self.groups[gr.name][1][sgr.name] = (subGroupIndex,
+                                                     SSGroup ({}, scr))
+                subGroupIndex = subGroupIndex + 1
                 sglist = sglist.next
+            groupIndex = groupIndex + 1
             glist = glist.next
         setlist = ccsGetPluginSettings (self.ccsPlugin)
 
@@ -756,7 +761,7 @@ cdef class Plugin:
         while setlist != NULL:
             sett = <CCSSetting *> setlist.data
 
-            subgroup = self.groups[sett.group][sett.subGroup]
+            subgroup = self.groups[sett.group][1][sett.subGroup][1]
 
             if sett.isScreen:
                 setting = Setting (self, sett.name, True, sett.screenNum)
