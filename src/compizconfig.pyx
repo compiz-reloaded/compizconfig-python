@@ -31,12 +31,13 @@ cdef enum CCSSettingType:
     TypeFloat
     TypeString
     TypeColor
-    TypeMatch
-    TypeList
+    TypeAction
     TypeKey
     TypeButton
     TypeEdge
     TypeBell
+    TypeMatch
+    TypeList
     TypeNum
 
 cdef enum CCSPluginConflictType:
@@ -56,12 +57,13 @@ SettingTypeString = [
     "Float",
     "String",
     "Color",
-    "Match",
-    "List",
+    "Action",
     "Key",
     "Button",
     "Edge",
     "Bell",
+    "Match",
+    "List",
     "Invalid"
 ]
 
