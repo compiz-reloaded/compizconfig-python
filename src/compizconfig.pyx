@@ -809,7 +809,7 @@ cdef class Plugin:
         if t == TypeList:
             t = i.forList.listType
             i = <CCSSettingInfo *> i.forList.listInfo
-        if t != TypeString or i.forString.sortStartsAt < 0:
+        if t != TypeString:
             return
 
         (itemsByName, listOfAddedItems) = \
@@ -822,7 +822,10 @@ cdef class Plugin:
         setting.baseStrRestrictions = \
             listOfAddedItems + setting.baseStrRestrictions
 
-        if i.forString.sortStartsAt == 0:
+        if i.forString.sortStartsAt < 0:
+            # don't sort
+            sortedItems = itemsByName.items ()
+        elif i.forString.sortStartsAt == 0:
             # Sort all items by value
             sortedItems = sorted (itemsByName.items (),
                                   key=StringSettingKeyFunc)
