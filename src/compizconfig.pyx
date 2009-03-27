@@ -228,7 +228,6 @@ cdef struct CCSStrExtension:
     char *                  basePlugin
     CCSSettingList *        baseSettings
     CCSStrRestrictionList * restriction
-    Bool                    isScreen
 
 cdef struct CCSPlugin:
     char * name
@@ -880,12 +879,9 @@ cdef class Plugin:
             while baseSettingList:
                 baseSettingName = <char *> baseSettingList.data
 
-                if ext.isScreen:
-                    settings = []
-                    for x in xrange (self.context.nScreens):
-                        settings.append (basePlugin.Screens[x][baseSettingName])
-                else:
-                    settings = [basePlugin.Display[baseSettingName]]
+                settings = []
+                for x in xrange (self.context.nScreens):
+                    settings.append (basePlugin.Screens[x][baseSettingName])
 
                 for settingItem in settings:
                     setting = settingItem
