@@ -1,7 +1,7 @@
 AC_PREREQ(2.57)
-AC_INIT([compizconfig-python],esyscmd(. ./VERSION;echo -n $VERSION), [livinglatexkali@gmail.com])
+AC_INIT([compizconfig-python], [0.8.9], [livinglatexkali@gmail.com])
 
-AM_INIT_AUTOMAKE([1.9 dist-bzip2])
+AM_INIT_AUTOMAKE([1.9 foreign dist-xz no-dist-gzip check-news])
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 AM_MAINTAINER_MODE
