@@ -71,7 +71,7 @@ AC_DEFUN([AM_PATH_PYTHON_VERSION],
   dnl library.
 
   AC_CACHE_CHECK([for $am_display_PYTHON version], [am_cv_python_version],
-    [am_cv_python_version=`$PYTHON -c "import sys; print sys.version[[:3]]"`])
+    [am_cv_python_version=`$PYTHON -c "import sys; print(sys.version[[:3]])"`])
   AC_SUBST([PYTHON_VERSION], [$am_cv_python_version])
 
   dnl Use the values of $prefix and $exec_prefix for the corresponding
@@ -86,7 +86,7 @@ AC_DEFUN([AM_PATH_PYTHON_VERSION],
   dnl to know which OS platform Python thinks this is.
 
   AC_CACHE_CHECK([for $am_display_PYTHON platform], [am_cv_python_platform],
-    [am_cv_python_platform=`$PYTHON -c "import sys; print sys.platform"`])
+    [am_cv_python_platform=`$PYTHON -c "import sys; print(sys.platform)"`])
   AC_SUBST([PYTHON_PLATFORM], [$am_cv_python_platform])
 
 
@@ -101,7 +101,7 @@ AC_DEFUN([AM_PATH_PYTHON_VERSION],
   dnl doesn't work.
   AC_CACHE_CHECK([for $am_display_PYTHON script directory],
     [am_cv_python_pythondir],
-    [am_cv_python_pythondir=`$PYTHON -c "from distutils import sysconfig; print sysconfig.get_python_lib(0,0,prefix='$PYTHON_PREFIX')" 2>/dev/null ||
+    [am_cv_python_pythondir=`$PYTHON -c "from distutils import sysconfig; print(sysconfig.get_python_lib(0,0,prefix='$PYTHON_PREFIX'))" 2>/dev/null ||
      echo "$PYTHON_PREFIX/lib/python$PYTHON_VERSION/site-packages"`])
   AC_SUBST([pythondir], [$am_cv_python_pythondir])
 
@@ -118,7 +118,7 @@ AC_DEFUN([AM_PATH_PYTHON_VERSION],
   dnl doesn't work.
   AC_CACHE_CHECK([for $am_display_PYTHON extension module directory],
     [am_cv_python_pyexecdir],
-    [am_cv_python_pyexecdir=`$PYTHON -c "from distutils import sysconfig; print sysconfig.get_python_lib(1,0,prefix='$PYTHON_EXEC_PREFIX')" 2>/dev/null ||
+    [am_cv_python_pyexecdir=`$PYTHON -c "from distutils import sysconfig; print(sysconfig.get_python_lib(1,0,prefix='$PYTHON_EXEC_PREFIX'))" 2>/dev/null ||
      echo "${PYTHON_EXEC_PREFIX}/lib/python${PYTHON_VERSION}/site-packages"`])
   AC_SUBST([pyexecdir], [$am_cv_python_pyexecdir])
 
@@ -129,11 +129,19 @@ AC_DEFUN([AM_PATH_PYTHON_VERSION],
   fi
 
 dnl deduce PYTHON_INCLUDES
-py_prefix=`$PYTHON -c "import sys; print sys.prefix"`
-py_exec_prefix=`$PYTHON -c "import sys; print sys.exec_prefix"`
-PYTHON_INCLUDES="-I${py_prefix}/include/python${PYTHON_VERSION}"
-if test "$py_prefix" != "$py_exec_prefix"; then
-  PYTHON_INCLUDES="$PYTHON_INCLUDES -I${py_exec_prefix}/include/python${PYTHON_VERSION}"
+python_path=`$PYTHON -c "from distutils import sysconfig; print(sysconfig.get_python_inc(prefix='$PYTHON_EXEC_PREFIX'))" 2>/dev/null`
+python_arch_path=`$PYTHON -c "from distutils import sysconfig; print(sysconfig.get_python_inc(prefix='$PYTHON_EXEC_PREFIX',plat_specific=1))" 2>/dev/null`
+if test -n "$python_path"; then
+  PYTHON_INCLUDES="-I${python_path}"
+fi
+if test -n "$python_arch_path" && test "$python_path" != "$python_arch_path"; then
+  PYTHON_INCLUDES="$PYTHON_INCLUDES -I${python_arch_path}"
+fi
+if test -z "$PYTHON_INCLUDES"; then
+  PYTHON_INCLUDES="-I${PYTHON_PREFIX}/include/python${PYTHON_VERSION}"
+  if test "$PYTHON_PREFIX" != "$PYTHON_EXEC_PREFIX"; then
+    PYTHON_INCLUDES="$PYTHON_INCLUDES -I${PYTHON_EXEC_PREFIX}/include/python${PYTHON_VERSION}"
+  fi
 fi
 AC_SUBST(PYTHON_INCLUDES)
 

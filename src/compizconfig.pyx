@@ -378,16 +378,16 @@ cdef CCSStringList * ListToStringList (object list):
     listStart.data = <char *> strdup (list[0])
     listStart.next = NULL
     prev = listStart
-    
+
     for l in list[1:]:
         stringList = <CCSStringList *> malloc (sizeof (CCSStringList))
         stringList.data = <char *> strdup (l)
         stringList.next = NULL
         prev.next = stringList
         prev = stringList
-    
+
     return listStart
-    
+
 cdef object StringListToList (CCSList * stringList):
     list = []
     while stringList:
@@ -410,7 +410,7 @@ cdef CCSSettingList * ListToSettingList (object list):
     listStart.data = <CCSSetting *> setting.ccsSetting
     listStart.next = NULL
     prev = listStart
-    
+
     for l in list[1:]:
         settingList = <CCSSettingList *> malloc (sizeof (CCSSettingList))
         setting = <Setting> l
@@ -418,13 +418,13 @@ cdef CCSSettingList * ListToSettingList (object list):
         settingList.next = NULL
         prev.next = settingList
         prev = settingList
-    
+
     return listStart
 
 cdef object SettingListToList (Context context, CCSList * settingList):
     cdef CCSSetting * ccsSetting
     list = []
-    
+
     while settingList:
         ccsSetting = <CCSSetting *> settingList.data
         setting = None
@@ -435,7 +435,7 @@ cdef object SettingListToList (Context context, CCSList * settingList):
             setting = plugin.Display[ccsSetting.name]
         list.append (setting)
         settingList = settingList.next
-    
+
     return list
 
 cdef object IntDescListToDict (CCSIntDescList * intDescList):
@@ -615,7 +615,7 @@ cdef class Setting:
         if self.ccsSetting.type == TypeList:
             info = (SettingTypeString[t], info)
         self.info = info
-    
+
     def Reset (self):
         ccsResetToDefault (self.ccsSetting)
 
@@ -653,7 +653,7 @@ cdef class Setting:
 
     property Hints:
         def __get__ (self):
-            if self.ccsSetting.hints == '':
+            if str (self.ccsSetting.hints) == '':
                 return []
             else:
                 return str (self.ccsSetting.hints).split (";")[:-1]
@@ -714,7 +714,7 @@ cdef class Plugin:
     cdef object loaded
     cdef object ranking
     cdef object hasExtendedString
-    
+
     def __cinit__ (self, Context context, name):
         self.ccsPlugin = ccsFindPlugin (context.ccsContext, name)
         self.context = context
@@ -782,10 +782,10 @@ cdef class Plugin:
             if t == TypeString and i.forString.extensible:
                 self.hasExtendedString = True
 
-            if not self.ranking.has_key (sett.name):
+            if sett.name not in self.ranking:
                 self.ranking[sett.name] = rank
                 rank = rank + 1
-            
+
             setlist = setlist.next
 
         self.loaded = True
@@ -998,7 +998,8 @@ cdef class Plugin:
 
     property EnableConflicts:
         def __get__ (self):
-            cdef CCSPluginConflictList * pl, * pls
+            cdef CCSPluginConflictList * pl
+            cdef CCSPluginConflictList * pls
             cdef CCSPluginConflict * pc
             cdef CCSPluginList * ppl
             cdef CCSPlugin * plg
@@ -1026,7 +1027,8 @@ cdef class Plugin:
 
     property DisableConflicts:
         def __get__ (self):
-            cdef CCSPluginConflictList * pl, * pls
+            cdef CCSPluginConflictList * pl
+            cdef CCSPluginConflictList * pls
             cdef CCSPluginConflict * pc
             cdef CCSPluginList * ppl
             cdef CCSPlugin * plg
@@ -1085,7 +1087,7 @@ cdef class Backend:
         self.longDesc = strdup (info[2])
         self.profileSupport = bool (info[3])
         self.integrationSupport = bool (info[4])
-    
+
     def __dealloc__ (self):
         free (self.name)
         free (self.shortDesc)
@@ -1094,7 +1096,7 @@ cdef class Backend:
     property Name:
         def __get__ (self):
             return self.name
- 
+
     property ShortDesc:
         def __get__ (self):
             return self.shortDesc
@@ -1152,13 +1154,13 @@ cdef class Context:
                 cat = ''
             else:
                 cat = pl.category
-            if not self.categories.has_key (cat):
+            if cat not in self.categories:
                 self.categories[cat] = []
             self.categories[cat].append (self.plugins[pl.name])
             pll = pll.next
 
         self.integration = ccsGetIntegrationEnabled (self.ccsContext)
-        
+
         self.UpdateProfiles ()
 
     def UpdateExtensiblePlugins (self):
@@ -1228,7 +1230,7 @@ cdef class Context:
             self.backends[backendInfo.name] = Backend (self, info)
             backendList = backendList.next
         self.currentBackend = self.backends[ccsGetBackend (self.ccsContext)]
-    
+
     def ResetProfile (self):
         self.currentProfile = Profile (self, "")
         ccsSetProfile (self.ccsContext, "")
@@ -1286,7 +1288,7 @@ cdef class Context:
             if value != None and len (value) != 0:
                 settingList = ListToSettingList (value)
                 self.ccsContext.changedSettings = settingList
-                
+
     property AutoSort:
         def __get__ (self):
             return bool (ccsGetPluginListAutoSort (self.ccsContext))
@@ -1304,4 +1306,3 @@ cdef class Context:
             self.integration = value
             ccsSetIntegrationEnabled (self.ccsContext, value)
             ccsReadSettings (self.ccsContext)
-

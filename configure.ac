@@ -22,26 +22,24 @@ AC_SUBST(CCS_REQUIRES)
 
 dnl PYTHON SPECIFIC
 
-m4_define(required_python_abi,2.4)
+AM_PATH_PYTHON([2.7])
+AM_PATH_PYTHON_VERSION([2.7],[2.7.0])
 
-AM_PATH_PYTHON
-if test "$PYTHON_VERSION" = "2.4"
-then
-	AM_PATH_PYTHON_VERSION(2.4,2.4.0)
-else
-	AM_PATH_PYTHON_VERSION(2.5,2.5.0)
-fi
+AC_ARG_WITH(cython, [  --with-cython=PATH ],
+		    [with_cython="$withval"],
+		    [with_cython="cython"])
+AC_SUBST(cython)
 
-AC_CHECK_PROGS(PYREX, pyrexc)
-if test -z "$PYREX"
+AC_CHECK_PROGS(CYTHON, "$with_cython")
+if test -z "$CYTHON"
 then
-	AC_MSG_ERROR([Couldn't find Pyrex])
+  AC_MSG_ERROR([Couldn't find Cython])
 fi
 
 AC_CONFIG_FILES([
-	compizconfig-python.pc
-	Makefile
-	src/Makefile
+  compizconfig-python.pc
+  Makefile
+  src/Makefile
 ])
 
 AC_OUTPUT
