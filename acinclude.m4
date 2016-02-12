@@ -129,8 +129,10 @@ AC_DEFUN([AM_PATH_PYTHON_VERSION],
   fi
 
 dnl deduce PYTHON_INCLUDES
-python_path=`$PYTHON -c "from distutils import sysconfig; print(sysconfig.get_python_inc(prefix='$PYTHON_EXEC_PREFIX'))" 2>/dev/null`
-python_arch_path=`$PYTHON -c "from distutils import sysconfig; print(sysconfig.get_python_inc(prefix='$PYTHON_EXEC_PREFIX',plat_specific=1))" 2>/dev/null`
+py_prefix=`$PYTHON -c "import sys; print(sys.prefix)"`
+py_exec_prefix=`$PYTHON -c "import sys; print(sys.exec_prefix)"`
+python_path=`$PYTHON -c "from distutils import sysconfig; print(sysconfig.get_python_inc(prefix='${py_prefix}'))" 2>/dev/null`
+python_arch_path=`$PYTHON -c "from distutils import sysconfig; print(sysconfig.get_python_inc(prefix='${py_exec_prefix}',plat_specific=1))" 2>/dev/null`
 if test -n "$python_path"; then
   PYTHON_INCLUDES="-I${python_path}"
 fi
@@ -138,9 +140,9 @@ if test -n "$python_arch_path" && test "$python_path" != "$python_arch_path"; th
   PYTHON_INCLUDES="$PYTHON_INCLUDES -I${python_arch_path}"
 fi
 if test -z "$PYTHON_INCLUDES"; then
-  PYTHON_INCLUDES="-I${PYTHON_PREFIX}/include/python${PYTHON_VERSION}"
-  if test "$PYTHON_PREFIX" != "$PYTHON_EXEC_PREFIX"; then
-    PYTHON_INCLUDES="$PYTHON_INCLUDES -I${PYTHON_EXEC_PREFIX}/include/python${PYTHON_VERSION}"
+  PYTHON_INCLUDES="-I${py_prefix}/include/python${PYTHON_VERSION}"
+  if test "$py_prefix" != "$py_exec_prefix"; then
+    PYTHON_INCLUDES="$PYTHON_INCLUDES -I${py_exec_prefix}/include/python${PYTHON_VERSION}"
   fi
 fi
 AC_SUBST(PYTHON_INCLUDES)
