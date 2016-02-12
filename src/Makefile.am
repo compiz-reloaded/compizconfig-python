@@ -5,6 +5,7 @@ AM_CPPFLAGS=\
 compizconfig.c: compizconfig.pyx
 	'$(CYTHON)' compizconfig.pyx
 
+compizconfig_la_CFLAGS = -fno-strict-aliasing
 compizconfig_la_LDFLAGS = -module -avoid-version -fPIC -export-symbols-regex initcompizconfig -lX11
 compizconfig_la_LIBADD = @CCS_LIBS@
 compizconfig_la_SOURCES = compizconfig.c
