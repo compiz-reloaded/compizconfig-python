@@ -1,5 +1,13 @@
-Release 0.8.12
+Release 0.8.12 (2016-02-12 Sorokin Alexei <sor.alexei@meowr.ru>)
 ================================================================
+COMPIZ-RELOADED
+
+Set minimal Python required version to 2.7.x.
+
+Use Cython instead of Pyrex.
+
+Add -fno-strict-aliasing to default CFLAGS to supress needless
+warnings.
 
 Release 0.8.9 (2015-11-06 Wolfgang Ulbrich <chat-to-me@raveit.de>)
 ==================================================================
