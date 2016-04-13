@@ -22,8 +22,7 @@ AC_SUBST(CCS_REQUIRES)
 
 dnl PYTHON SPECIFIC
 
-AM_PATH_PYTHON([2.7])
-AM_PATH_PYTHON_VERSION([2.7],[2.7.0])
+AM_PATH_PYTHON_DEVEL([2.7],[3.0])
 
 AC_ARG_WITH(cython, [  --with-cython=PATH ],
 		    [with_cython="$withval"],
@@ -31,8 +30,9 @@ AC_ARG_WITH(cython, [  --with-cython=PATH ],
 AC_SUBST(cython)
 
 AC_CHECK_PROGS(CYTHON, "$with_cython")
-if test -z "$CYTHON"
-then
+if test -n "$CYTHON"; then
+  CYTHON="`which "$CYTHON"`"
+else
   AC_MSG_ERROR([Couldn't find Cython])
 fi
 
