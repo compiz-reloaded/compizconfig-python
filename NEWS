@@ -1,3 +1,11 @@
+Release 0.8.12.1 (2016-04-16 Sorokin Alexei <sor.alexei@meowr.ru>)
+==================================================================
+COMPIZ-RELOADED
+
+Include autogen.sh in the tarball.
+
+Better detection of Python2.
+
 Release 0.8.12 (2016-02-12 Sorokin Alexei <sor.alexei@meowr.ru>)
 ================================================================
 COMPIZ-RELOADED
