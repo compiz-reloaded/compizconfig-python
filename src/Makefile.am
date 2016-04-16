@@ -3,7 +3,7 @@ AM_CPPFLAGS=\
 		 @CCS_CFLAGS@
 
 compizconfig.c: compizconfig.pyx
-	'$(PYTHON)' '$(CYTHON)' -Wextra -o compizconfig.c compizconfig.pyx
+	'$(CYTHON)' -Wextra -o compizconfig.c compizconfig.pyx
 
 compizconfig_la_CFLAGS = -fno-strict-aliasing
 compizconfig_la_LDFLAGS = -module -avoid-version -fPIC -export-symbols-regex initcompizconfig -lX11
