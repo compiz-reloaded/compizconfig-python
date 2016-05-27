@@ -69,12 +69,14 @@ AC_DEFUN([AM_PATH_PYTHON_DEVEL],
 
   if test "x$_python_found" = xyes; then
 
-    py_major_ver=`$PYTHON -c "import sys; print(sys.version_info.major)"`
-    if test "$py_major_ver" -gt 2; then
-      py_soinitprefix=PyInit_
+    PYTHON_MAJOR_VER=`$PYTHON -c "import sys; print(sys.version_info.major)"`
+    AC_SUBST(PYTHON_MAJOR_VER)
+    if test "$PYTHON_MAJOR_VER" -gt 2; then
+      PYTHON_SOINIT_PREFIX=PyInit_
     else
-      py_soinitprefix=init
+      PYTHON_SOINIT_PREFIX=init
     fi
+    AC_SUBST(PYTHON_SOINIT_PREFIX)
     dnl Deduce PYTHON_INCLUDES.
     py_prefix=`$PYTHON -c "import sys; print(sys.prefix)"`
     py_exec_prefix=`$PYTHON -c "import sys; print(sys.exec_prefix)"`

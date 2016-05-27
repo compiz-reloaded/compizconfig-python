@@ -1,3 +1,5 @@
+# -*- coding: UTF-8 -*-
+# cython: c_string_type=str, c_string_encoding=utf8
 '''
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public License
@@ -254,6 +256,10 @@ cdef struct CCSPluginConflict:
     CCSPluginConflictType type
     CCSPluginList *       plugins
 
+'''String utils'''
+from libc.stdlib cimport free, malloc
+from libc.string cimport strdup, memset
+
 '''Context functions'''
 cdef extern void ccsSetBasicMetadata (Bool value)
 cdef extern CCSContext * ccsContextNew (unsigned int * screens,
@@ -278,14 +284,6 @@ cdef extern char * ccsEdgesToString (unsigned int edge)
 cdef extern char * ccsEdgesToModString (unsigned int edge)
 cdef extern char * ccsKeyBindingToString (CCSSettingKeyValue *key)
 cdef extern char * ccsButtonBindingToString (CCSSettingButtonValue *button)
-
-'''String utils'''
-cdef extern from 'string.h':
-    ctypedef int size_t
-    cdef extern char * strdup (char * s)
-    cdef extern void memset (void * s, int c, size_t n)
-    cdef extern void free (void * f)
-    cdef extern void * malloc (size_t s)
 
 '''String => Action'''
 cdef extern unsigned int ccsStringToModifiers (char *binding)
@@ -375,13 +373,13 @@ cdef CCSStringList * ListToStringList (object list):
     cdef CCSStringList * stringList
     cdef CCSStringList * prev
     listStart = <CCSStringList *> malloc (sizeof (CCSStringList))
-    listStart.data = <char *> strdup (list[0])
+    listStart.data = <char *> strdup (<char *> list[0])
     listStart.next = NULL
     prev = listStart
 
     for l in list[1:]:
         stringList = <CCSStringList *> malloc (sizeof (CCSStringList))
-        stringList.data = <char *> strdup (l)
+        stringList.data = <char *> strdup (<char *> l)
         stringList.next = NULL
         prev.next = stringList
         prev = stringList
@@ -474,9 +472,13 @@ cdef CCSSettingValue * EncodeValue (object       data,
     else:
         t = setting.type
     if t == TypeString:
-        bv.value.asString = strdup (data)
+        if not isinstance (data, bytes):
+            data = data.encode ("utf-8")
+        bv.value.asString = strdup (<char *> data)
     elif t == TypeMatch:
-        bv.value.asMatch = strdup (data)
+        if not isinstance (data, bytes):
+            data = data.encode ("utf-8")
+        bv.value.asMatch = strdup (<char *> data)
     elif t == TypeInt:
         bv.value.asInt = data
     elif t == TypeFloat:
@@ -492,10 +494,16 @@ cdef CCSSettingValue * EncodeValue (object       data,
         bv.value.asColor.color.blue = data[2]
         bv.value.asColor.color.alpha = data[3]
     elif t == TypeKey:
+        if not isinstance (data, bytes):
+            data = data.encode ("utf-8")
         ccsStringToKeyBinding (data, &bv.value.asKey)
     elif t == TypeButton:
+        if not isinstance (data, bytes):
+            data = data.encode ("utf-8")
         ccsStringToButtonBinding (data, &bv.value.asButton)
     elif t == TypeEdge:
+        if not isinstance (data, bytes):
+            data = data.encode ("utf-8")
         bv.value.asEdge = ccsStringToEdges (data)
     elif t == TypeBell:
         if (data):
@@ -586,6 +594,9 @@ cdef class Setting:
     def __cinit__ (self, Plugin plugin, name, isScreen, screenNum = 0):
         cdef CCSSettingType t
         cdef CCSSettingInfo * i
+
+        if not isinstance (name, bytes):
+            name = name.encode ("utf-8")
 
         self.ccsSetting = ccsFindSetting (plugin.ccsPlugin,
                                           name, isScreen, screenNum)
@@ -716,6 +727,8 @@ cdef class Plugin:
     cdef object hasExtendedString
 
     def __cinit__ (self, Context context, name):
+        if not isinstance (name, bytes):
+            name = name.encode ("utf-8")
         self.ccsPlugin = ccsFindPlugin (context.ccsContext, name)
         self.context = context
         self.screens = []
@@ -984,8 +997,11 @@ cdef class Plugin:
 
     property Enabled:
         def __get__ (self):
-            return bool (ccsPluginIsActive (self.context.ccsContext,
-                                            self.ccsPlugin.name))
+            if isinstance (self.ccsPlugin.name, bytes):
+                name = self.ccsPlugin.name
+            else:
+                name = self.ccsPlugin.name.encode ("utf-8")
+            return bool (ccsPluginIsActive (self.context.ccsContext, name))
         def __set__ (self, val):
             if val:
                 if len (self.EnableConflicts):
@@ -1059,8 +1075,10 @@ cdef class Profile:
     cdef char * name
 
     def __cinit__ (self, Context context, name):
+        if not isinstance (name, bytes):
+            name = name.encode ("utf-8")
         self.context = context
-        self.name = strdup (name)
+        self.name = <char *> strdup (<char *> name)
 
     def __dealloc (self):
         free (self.name)
@@ -1081,10 +1099,14 @@ cdef class Backend:
     cdef Bool integrationSupport
 
     def __cinit__ (self, Context context, info):
+        name = info[0] if isinstance (info[0], bytes) else info[0].encode ("utf-8")
+        shortDesc = info[1] if isinstance (info[1], bytes) else info[1].encode ("utf-8")
+        longDesc = info[2] if isinstance (info[2], bytes) else info[2].encode ("utf-8")
+
         self.context = context
-        self.name = strdup (info[0])
-        self.shortDesc = strdup (info[1])
-        self.longDesc = strdup (info[2])
+        self.name = strdup (<char *> name)
+        self.shortDesc = strdup (<char *> shortDesc)
+        self.longDesc = strdup (<char *> longDesc)
         self.profileSupport = bool (info[3])
         self.integrationSupport = bool (info[4])
 
@@ -1188,6 +1210,8 @@ cdef class Context:
         ccsContextDestroy (self.ccsContext)
 
     def LoadPlugin (self, plugin):
+        if not isinstance (plugin, bytes):
+            plugin = plugin.encode ("utf-8")
         return ccsLoadPlugin (self.ccsContext, plugin)
 
     # Returns the settings that should be updated
@@ -1233,17 +1257,25 @@ cdef class Context:
 
     def ResetProfile (self):
         self.currentProfile = Profile (self, "")
-        ccsSetProfile (self.ccsContext, "")
+        ccsSetProfile (self.ccsContext, b"")
         ccsReadSettings (self.ccsContext)
 
     def Import (self, path, autoSave = True):
-        ret = bool (ccsImportFromFile (self.ccsContext, path, True))
+        if not isinstance (path, bytes):
+            path = path.encode ("utf-8")
+        ret = bool (ccsImportFromFile (self.ccsContext,
+                                       path,
+                                        True))
         if autoSave:
             ccsWriteSettings (self.ccsContext)
         return ret
 
     def Export (self, path, skipDefaults = False):
-        return bool (ccsExportToFile (self.ccsContext, path, skipDefaults))
+        if not isinstance (path, bytes):
+            path = path.encode ("utf-8")
+        return bool (ccsExportToFile (self.ccsContext,
+                                      path,
+                                      skipDefaults))
 
     property Plugins:
         def __get__ (self):
@@ -1258,7 +1290,11 @@ cdef class Context:
             return self.currentProfile
         def __set__ (self, profile):
             self.currentProfile = profile
-            ccsSetProfile (self.ccsContext, profile.Name)
+            if isinstance (profile.Name, bytes):
+                name = profile.Name
+            else:
+                name = profile.Name.encode ("utf-8")
+            ccsSetProfile (self.ccsContext, name)
             ccsReadSettings (self.ccsContext)
 
     property Profiles:
@@ -1270,7 +1306,11 @@ cdef class Context:
             return self.currentBackend
         def __set__ (self, backend):
             self.currentBackend = backend
-            ccsSetBackend (self.ccsContext, backend.Name)
+            if isinstance (backend.Name, bytes):
+                name = backend.Name
+            else:
+                name = backend.Name.encode ("utf-8")
+            ccsSetBackend (self.ccsContext, name)
             ccsReadSettings (self.ccsContext)
 
     property Backends:

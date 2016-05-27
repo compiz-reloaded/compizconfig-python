@@ -22,7 +22,7 @@ AC_SUBST(CCS_REQUIRES)
 
 dnl PYTHON SPECIFIC
 
-AM_PATH_PYTHON_DEVEL([2.7],[3.0])
+AM_PATH_PYTHON_DEVEL([2.7],[4.0])
 
 AC_ARG_WITH(cython, [  --with-cython=PATH ],
 		    [with_cython="$withval"],

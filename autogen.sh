@@ -13,6 +13,7 @@ if [ ! -f "$srcdir/configure.ac" ]; then
     exit 1
 fi
 
+mkdir -p m4
 autoreconf --verbose --force --install || exit 1
 
 cd "$OLDPWD" || exit $?
