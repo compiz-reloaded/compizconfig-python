@@ -17,9 +17,10 @@
 # AM_PATH_PYTHON_DEVEL([MIN-VERSION], [MAX-VERSION], [ACTION-IF-FOUND],
 #  [ACTION-IF-NOT-FOUND])
 # ---------------------------------------------------------------------------
-# Wrapper over AM_PATH_PYTHON to populate PYTHON_INCLUDES.
-# Wrapper also can check for max Python version in order to avoid a new
-# backwards incompatible API like Python 3.x is for Python 2.x.
+# Wrapper over AM_PATH_PYTHON to populate PYTHON_INCLUDES and some other
+# variables.
+# It also can check for max Python version in order to avoid newer backwards
+# incompatible APIs like Python 3.x is for Python 2.x.
 
 AC_DEFUN([AM_PATH_PYTHON_DEVEL],
  [
@@ -68,6 +69,12 @@ AC_DEFUN([AM_PATH_PYTHON_DEVEL],
 
   if test "x$_python_found" = xyes; then
 
+    py_major_ver=`$PYTHON -c "import sys; print(sys.version_info.major)"`
+    if test "$py_major_ver" -gt 2; then
+      py_soinitprefix=PyInit_
+    else
+      py_soinitprefix=init
+    fi
     dnl Deduce PYTHON_INCLUDES.
     py_prefix=`$PYTHON -c "import sys; print(sys.prefix)"`
     py_exec_prefix=`$PYTHON -c "import sys; print(sys.exec_prefix)"`
