@@ -1,5 +1,5 @@
 AC_PREREQ(2.57)
-AC_INIT([compizconfig-python], [0.8.13], [livinglatexkali@gmail.com])
+AC_INIT([compizconfig-python], [0.8.14], [livinglatexkali@gmail.com])
 
 AM_INIT_AUTOMAKE([1.9 foreign dist-xz no-dist-gzip check-news])
 AC_CONFIG_HEADER([config.h])
