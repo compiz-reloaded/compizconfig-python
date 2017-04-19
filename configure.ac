@@ -27,14 +27,14 @@ AM_PATH_PYTHON_DEVEL([2.7],[4.0])
 AC_ARG_WITH(cython, [  --with-cython=PATH ],
 		    [with_cython="$withval"],
 		    [with_cython="cython"])
-AC_SUBST(cython)
 
-AC_CHECK_PROGS(CYTHON, "$with_cython")
-if test -n "$CYTHON"; then
-  CYTHON="`which "$CYTHON"`"
-else
-  AC_MSG_ERROR([Couldn't find Cython])
-fi
+AC_MSG_CHECKING([for $with_cython])
+CYTHON="`which "$with_cython" 2> /dev/null`"
+AS_IF([test -n "$CYTHON"],
+      [AC_MSG_RESULT([yes])
+       AC_SUBST(CYTHON)],
+      [AC_MSG_RESULT([no])
+       AC_MSG_ERROR([Couldn't find Cython])])
 
 AC_CONFIG_FILES([
   compizconfig-python.pc
