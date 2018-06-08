@@ -16,8 +16,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 Authors:
-    Quinn Storm (quinn@beryl-project.org)
-    Patrick Niklaus (marex@opencompositing.org)
+    Quinn Storm (livinglatexkali@gmail.com)
+    Patrick Niklaus (patrick.niklaus@student.kit.edu)
     Guillaume Seguin (guillaume@segu.in)
 Copyright (C) 2007 Quinn Storm
 '''
