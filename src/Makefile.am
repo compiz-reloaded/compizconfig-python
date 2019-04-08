@@ -8,7 +8,7 @@ compizconfig.c: compizconfig.pyx
 compizconfig_la_CFLAGS = -fno-strict-aliasing $(PYTHON_CFLAGS) $(AM_CFLAGS)
 compizconfig_la_LDFLAGS = -module -avoid-version -fPIC -export-symbols-regex $(PYTHON_LDFLAGS) $(AM_LDFLAGS) $(PYTHON_SOINIT_PREFIX)compizconfig
 compizconfig_la_LIBADD = @CCS_LIBS@
-compizconfig_la_SOURCES = compizconfig.c
+nodist_compizconfig_la_SOURCES = compizconfig.c
 compizconfigdir=$(pyexecdir)
 compizconfig_LTLIBRARIES=compizconfig.la
 
